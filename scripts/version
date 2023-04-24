@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -euo pipefail
+
+SEP=${SEP:-"-"}
+
+exact_tag=$(git describe --exact-match 2>/dev/null | sed -e 's/^v//g' || echo '')
+last_tag=$(git describe --tags --abbrev=0 2>/dev/null)
+commits=$(git log --oneline "${last_tag}"..HEAD | wc -l | tr -d ' ')
+revision=$(git rev-parse --short HEAD || echo unknown)
+
+if echo "${exact_tag}" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+$"; then
+    echo "$exact_tag"
+    exit 0
+fi
+
+if echo "${exact_tag}" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$"; then
+    echo "$exact_tag"
+    exit 0
+fi
+
+if echo "${exact_tag}" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$"; then
+    echo "$exact_tag"
+    exit 0
+fi
+
+if [ "$commits" -eq 0 ]; then
+    if [ -n "$last_tag" ]; then
+        echo "${last_tag//v/}"
+        exit 0
+    fi
+fi
+
+echo "${last_tag//v/}${SEP}${commits}-${revision}"

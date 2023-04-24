@@ -1,0 +1,90 @@
+name: release
+
+on:
+  pull_request:
+  workflow_call:
+    secrets:
+      PERSONAL_ACCESS_TOKEN:
+        required: true
+      PUBLIC_GCR_JSON_KEY:
+        required: true
+
+permissions:
+   contents: write # needed to write releases
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'renovate') == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Detect Version for Docker
+        id: docker-version
+        run: echo "VERSION=$(SEP="-" scripts/version)" >> $GITHUB_OUTPUT
+      - name: Detect Version
+        id: version
+        run: echo "VERSION=$(scripts/version)" >> $GITHUB_OUTPUT
+    outputs:
+      docker-version: ${{ steps.docker-version.outputs.VERSION }}
+      version: ${{ steps.version.outputs.VERSION }}
+
+  goreleaser:
+    runs-on: ubuntu-latest
+    needs:
+      - version
+    env:
+      SUMMARY: ${{ needs.version.outputs.docker-version }}
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+          check-latest: true # https://github.com/actions/setup-go#check-latest-version
+          cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
+        env:
+          GOPRIVATE: "github.com/ksoclabs"
+
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+        run: git config --global url."https://ksocautomator:${TOKEN}@github.com".insteadOf "https://github.com"
+
+      - name: Login to GCR
+        uses: docker/login-action@v2
+        with:
+          registry: us.gcr.io
+          username: _json_key
+          password: ${{ secrets.PUBLIC_GCR_JSON_KEY }}
+
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          version: latest
+          install-only: true
+
+      - name: Release
+        if: startsWith(github.ref , 'refs/tags/v') == true
+        run: make release
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Snapshot
+        if: startsWith(github.ref , 'refs/tags/v') == false
+        run: make snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ needs.version.outputs.docker-version }}
+
+      - name: Push Snapshot Docker Image
+        if: startsWith(github.ref , 'refs/tags/v') == false
+        run: |
+          make docker_push_all

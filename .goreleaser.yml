@@ -1,0 +1,58 @@
+dist: release
+env:
+  - PACKAGE_NAME=github.com/{{.Env.GITHUB_ORG}}/{{.Env.APP_NAME}}
+  - CFG_PACKAGE_NAME=github.com/{{.Env.GITHUB_ORG}}/{{.Env.APP_NAME}}/internal/config
+before:
+  hooks:
+    - go mod tidy
+
+release:
+  github:
+    name: kbom
+    owner: ksoclabs
+
+builds:
+  - binary: "{{.Env.APP_NAME}}"
+    goarch:
+      - amd64
+    goos:
+      - linux
+    ldflags:
+      - -X "{{.Env.CFG_PACKAGE_NAME}}.AppName={{.Env.APP_NAME}}"
+      - -X "{{.Env.CFG_PACKAGE_NAME}}.AppVersion={{.Env.VERSION}}"
+      - -X "{{.Env.CFG_PACKAGE_NAME}}.BuildTime={{.Env.BUILD_TIME}}"
+      - -X "{{.Env.CFG_PACKAGE_NAME}}.LastCommitUser={{.Env.LAST_COMMIT_USER}}"
+      - -X "{{.Env.CFG_PACKAGE_NAME}}.LastCommitHash={{.Env.LAST_COMMIT_HASH}}"
+      - -X "{{.Env.CFG_PACKAGE_NAME}}.LastCommitTime={{.Env.LAST_COMMIT_TIME}}"
+    main: ./
+    env:
+      - CGO_ENABLED=0
+      - GO111MODULE=on
+
+dockers:
+  - goos: linux
+    goarch: amd64
+    dockerfile: build/package/Dockerfile.gorelease
+    image_templates:
+      - us.gcr.io/{{.Env.GCR_ORG}}/{{.Env.APP_NAME}}:{{- if .IsSnapshot -}}{{ .Env.VERSION }}{{- else -}}{{ .Tag }}{{- end -}}
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source=https://{{.Env.PACKAGE_NAME}}"
+      - "--platform=linux/amd64"
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "snapshot-{{ .ShortCommit }}-{{ .Timestamp }}"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
