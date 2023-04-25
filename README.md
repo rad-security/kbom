@@ -1,10 +1,20 @@
+<div align="center">
+
+[![GitHub Release][release-img]][release]
+[![Test][test-img]][test]
+[![Go Report Card][go-report-img]][go-report]
+[![License: Apache-2.0][license-img]][license]
+[![GitHub Downloads][github-downloads-img]][release]
+
+</div>
+
 # KBOM - Kubernetes Bill of Materials
 
-The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry. 
+The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry.
 
 As a first draft, we have created a rough specification which should fall in line with other Bill of Materials (BOM) standards.
 
-The KBOM project provides an initial specification in JSON and has been constructed for extensibilty across various cloud service providers (CSPs) as well as DIY Kubernetes. 
+The KBOM project provides an initial specification in JSON and has been constructed for extensibilty across various cloud service providers (CSPs) as well as DIY Kubernetes.
 
 ## Getting Started
 
