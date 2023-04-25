@@ -1,0 +1,10 @@
+# Directories
+vendor
+release
+archive
+
+# Files
+.envrc
+
+# KBOM Binaries
+kbom*

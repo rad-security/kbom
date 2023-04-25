@@ -1,0 +1,7 @@
+FROM alpine:3.17.3
+
+RUN mkdir /app
+
+COPY kbom /app/kbom
+
+ENTRYPOINT ["/app/kbom"]
