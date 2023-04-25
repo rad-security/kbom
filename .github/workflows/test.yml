@@ -1,4 +1,4 @@
-name: build
+name: test
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
 
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -27,5 +27,5 @@ jobs:
           TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: git config --global url."https://ksocautomator:${TOKEN}@github.com".insteadOf "https://github.com"
 
-      - name: Build
-        run: go build -race ./...
+      - name: Test
+        run: go test -race ./...
