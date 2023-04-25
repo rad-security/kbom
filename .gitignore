@@ -8,3 +8,6 @@ archive
 
 # KBOM Binaries
 /kbom*
+
+# BOM file
+bom.json
