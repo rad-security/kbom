@@ -7,18 +7,30 @@ before:
     - go mod tidy
 
 release:
+  extra_files:
+    - glob: ./bom.json
   github:
     name: kbom
     owner: ksoclabs
 
 builds:
-  - binary: "{{.Env.APP_NAME}}"
-    goarch:
-      - amd64
+  - binary: kbom
     goos:
+      - darwin
       - linux
+      - windows
+    goarch:
+      - 386
+      - amd64
+      - arm
+      - arm64
+    goarm:
+      - 7
+    ignore:
+      - goos: darwin
+        goarch: 386
     ldflags:
-      - -X "{{.Env.CFG_PACKAGE_NAME}}.AppName={{.Env.APP_NAME}}"
+      - -X "{{.Env.CFG_PACKAGE_NAME}}.AppName=kbom"
       - -X "{{.Env.CFG_PACKAGE_NAME}}.AppVersion={{.Env.VERSION}}"
       - -X "{{.Env.CFG_PACKAGE_NAME}}.BuildTime={{.Env.BUILD_TIME}}"
       - -X "{{.Env.CFG_PACKAGE_NAME}}.LastCommitUser={{.Env.LAST_COMMIT_USER}}"
@@ -27,7 +39,6 @@ builds:
     main: ./
     env:
       - CGO_ENABLED=0
-      - GO111MODULE=on
 
 dockers:
   - goos: linux

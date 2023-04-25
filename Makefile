@@ -24,7 +24,7 @@ initialise: ## Initialises the project, set ups git hooks
 
 .PHONY: release
 release: ## Builds a release
-	goreleaser release --clean
+	goreleaser release --clean --timeout 90m
 
 .PHONY: semtag-%
 semtag-%: ## Creates a new tag using semtag
@@ -33,7 +33,7 @@ semtag-%: ## Creates a new tag using semtag
 .PHONY: snapshot
 snapshot: ## Builds a snapshot release
 	GORELEASER_CURRENT_TAG=$(GORELEASER_CURRENT_TAG) \
-		goreleaser release --snapshot --clean
+		goreleaser build --snapshot --clean --single-target --timeout 90m
 
 .PHONY: docker_push_all
 docker_push_all: ## Pushes all docker images
