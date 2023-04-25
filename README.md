@@ -1,14 +1,8 @@
-<div align="center">
-
-[![GitHub Release][release-img]][release]
-[![Test][test-img]][test]
-[![Go Report Card][go-report-img]][go-report]
-[![License: Apache-2.0][license-img]][license]
-[![GitHub Downloads][github-downloads-img]][release]
-
-</div>
-
 # KBOM - Kubernetes Bill of Materials
+
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/ksoclabs/kbom)
+![Hex.pm](https://img.shields.io/hexpm/l/apa)
+![GitHub all releases](https://img.shields.io/github/downloads/ksoclabs/kbom/total)
 
 The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry.
 
