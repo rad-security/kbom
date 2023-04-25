@@ -1,41 +1,27 @@
 # KBOM - Kubernetes Bill of Materials
 
-The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry. As a first draft, we have created a rough specification which should fall in line with other Bill of Materials (BOM) standards.
+The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry. 
+
+As a first draft, we have created a rough specification which should fall in line with other Bill of Materials (BOM) standards.
 
 The KBOM project provides an initial specification in JSON and has been constructed for extensibilty across various cloud service providers (CSPs) as well as DIY Kubernetes. 
 
-## BOM Requirements
+## Getting Started
 
-### High level Object Model:
+### Prerequisites
 
-BoM Format Information 
+### Installation
 
-Cluster Details
 
-Instances
-- Name
-- Hostname
-- CloudType
-- Creation Timestamp
-- Capacity
-- OS Version
-- Kernel Version
-- Architecture
-- CRI Version
-- Kubelet Version
-- Kube Proxy Version
 
-Images
-- Name
-- Digest
+## Schema
 
-KubeObjects
-- Kind
-- Api Version
-- Count
-- Details
+The high level object model can be found [here](docs/schema.md).
 
-This overall structure provides a base spec to be expanded upon by the community. The intent of the standard is to be extensible to support various use cases across the industry.
+## Contributing
+
+KBOM is Apache 2.0 licensed and accepts contributions via GitHub pull requests. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
+
 
 ## How to generate KBOM for your cluster?
 
