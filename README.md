@@ -30,7 +30,7 @@ kbom generate [flags]
 
 ```sh
   -f, --format string     Format (json, yaml) (default "json")
-  -h, --help              help for generate
+  -h, --help              Help for generate
   -p, --out-path string   Path to write KBOM to (default ".")
   -o, --output string     Output (stdout, file) (default "stdout")
       --short             Short - only include metadata, nodes, images and resources counters
