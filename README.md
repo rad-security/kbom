@@ -8,26 +8,7 @@ The KBOM project provides an initial specification in JSON and has been construc
 
 ## Getting Started
 
-### Prerequisites
-
 ### Installation
-
-
-
-## Schema
-
-The high level object model can be found [here](docs/schema.md).
-
-## Contributing
-
-KBOM is Apache 2.0 licensed and accepts contributions via GitHub pull requests. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
-
-
-## How to generate KBOM for your cluster?
-
-Use `kbom` CLI tool!
-
-To install it:
 
 ```sh
 go install github.com/ksoclabs/kbom
@@ -39,15 +20,15 @@ or
 make build
 ```
 
-## KBOM CLI documentation
+### Usage
 
-`KBOM generate` generates KBOM file for your Kubernetes cluster
+`KBOM generate` generates a KBOM file for your Kubernetes cluster
 
 ```sh
 kbom generate [flags]
 ```
 
-### Options
+Optional flags include:
 
 ```sh
   -f, --format string     Format (json, yaml) (default "json")
@@ -57,8 +38,10 @@ kbom generate [flags]
       --short             Short - only include metadata, nodes, images and resources counters
 ```
 
-### Options inherited from parent commands
+## Schema
 
-```sh
-  -v, --verbose   enable verbose logging (DEBUG and below)
-```
+The high level object model can be found [here](docs/schema.md).
+
+## Contributing
+
+KBOM is Apache 2.0 licensed and accepts contributions via GitHub pull requests. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
