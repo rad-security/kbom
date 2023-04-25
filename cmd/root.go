@@ -40,6 +40,7 @@ func Execute() {
 func init() {
 	rootCmd.AddCommand(GenerateCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(schemaCmd)
 
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose logging (DEBUG and below)")
 
