@@ -41,6 +41,16 @@ builds:
     env:
       - CGO_ENABLED=0
 
+brews:
+  - tap:
+      owner: ksoclabs
+      name: homebrew-kbom
+    homepage: "https://github.com/ksoclabs/kbom"
+    description: "The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry."
+    license: "Apache 2"
+    test: |
+      system "#{bin}/kbom", "version"
+
 dockers:
   - goos: linux
     goarch: amd64
