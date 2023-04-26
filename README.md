@@ -48,6 +48,14 @@ Optional flags include:
 
 The high level object model can be found [here](docs/schema.md).
 
+## Supported Kubernetes Versions
+
+We have tested *kbom* with all versions newer than *v1.19*, and can confirm that it is fully compatible with each of these versions. This means that you can use our tool with confidence, knowing that it has been thoroughly tested with.
+
+## Supported Cloud Providers
+
+We have tested our tool with all of the main cloud providers, including `Azure`, `AWS`, and `Google Cloud`. Of course it's possible to generate `kbom` file for any K8s cluster, but please have in mind that in some cases not all metadata entries will be set.
+
 ## Contributing
 
 KBOM is Apache 2.0 licensed and accepts contributions via GitHub pull requests. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
