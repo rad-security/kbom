@@ -325,11 +325,11 @@ func getCloudLocation(labels map[string]string) string {
 		return "aws"
 	}
 
-	if _, ok := labels["k8s.io/cloud-provider-gcp"]; ok {
-		return "gcp"
+	if _, ok := labels["topology.gke.io/zone"]; ok {
+		return "gcloud"
 	}
 
-	if _, ok := labels["k8s.io/cloud-provider-azure"]; ok {
+	if _, ok := labels["kubernetes.azure.com/cluster"]; ok {
 		return "azure"
 	}
 
