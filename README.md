@@ -17,7 +17,7 @@ The KBOM project provides an initial specification in JSON and has been construc
 ### Installation
 
 ```sh
-go install github.com/ksoclabs/kbom
+brew install ksoclabs/homebrew-kbom/kbom
 ```
 
 or
