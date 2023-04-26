@@ -27,6 +27,6 @@ KubeObjects
 - Count
 - Details
 
-This overall structure provides a base spec to be expanded upon by the community. 
+This overall structure provides a base spec to be expanded upon by the community.
 
 The intent of the standard is to be extensible to support various use cases across the industry.
