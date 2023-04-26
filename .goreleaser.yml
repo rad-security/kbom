@@ -12,6 +12,7 @@ release:
   github:
     name: kbom
     owner: ksoclabs
+  discussion_category_name: Announcements
 
 builds:
   - binary: kbom
