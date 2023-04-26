@@ -34,7 +34,7 @@ kbom generate [flags]
 
 Optional flags include:
 
-```sh
+```
   -f, --format string     Format (json, yaml) (default "json")
   -h, --help              Help for generate
   -p, --out-path string   Path to write KBOM to (default ".")

@@ -214,8 +214,7 @@ func containerToImage(img, imgName string, statuses []v1.ContainerStatus) (*mode
 }
 
 // Metadata returns the kubernetes version
-func (k *k8sDB) Metadata(ctx context.Context) (caCertDigest, k8sVersion string, err error) {
-	caDigest := ""
+func (k *k8sDB) Metadata(ctx context.Context) (k8sVersion, caDigest string, err error) {
 	if _, err := rest.InClusterConfig(); err != nil {
 		hash := sha256.Sum256(k.cfg.CAData)
 		caDigest = fmt.Sprintf("%x", hash[:])
@@ -318,6 +317,10 @@ func getLabelValue(labels map[string]string, key string) string {
 }
 
 func getCloudLocation(labels map[string]string) string {
+	if labels == nil {
+		return "unknown"
+	}
+
 	if _, ok := labels["k8s.io/cloud-provider-aws"]; ok {
 		return "aws"
 	}

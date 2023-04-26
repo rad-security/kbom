@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"strings"
@@ -21,6 +22,8 @@ const (
 
 var (
 	verbose bool
+
+	out io.WriteCloser = os.Stdout
 )
 
 var rootCmd = &cobra.Command{

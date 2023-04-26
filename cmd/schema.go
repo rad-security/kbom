@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"os"
 
 	"github.com/invopop/jsonschema"
 	"github.com/ksoclabs/kbom/internal/model"
@@ -17,7 +16,7 @@ var schemaCmd = &cobra.Command{
 
 func runGenerateSchema(cmd *cobra.Command, _ []string) error {
 	schema := jsonschema.Reflect(&model.KBOM{})
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(out)
 	enc.SetIndent("", "  ")
 
 	return enc.Encode(schema)
