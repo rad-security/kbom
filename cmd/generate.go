@@ -51,7 +51,7 @@ func init() {
 	GenerateCmd.Flags().BoolVar(&short, "short", false, "Short - only include metadata, nodes, images and resources counters")
 	GenerateCmd.Flags().StringVarP(&output, "output", "o", StdOutput, "Output (stdout, file)")
 	GenerateCmd.Flags().StringVarP(&format, "format", "f", JSONFormat, "Format (json, yaml)")
-	GenerateCmd.Flags().StringVarP(&outPath, "out-path", "p", ".", "Path to write KBOM to")
+	GenerateCmd.Flags().StringVarP(&outPath, "out-path", "p", ".", "Path to write KBOM file to. Works only with --output=file")
 
 	utils.BindFlags(GenerateCmd)
 }
