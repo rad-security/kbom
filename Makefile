@@ -53,6 +53,10 @@ build: ## Builds kbom binary
 	-X '$(GIT_REPO)/internal/config.LastCommitTime=$(LAST_COMMIT_TIME)'" \
 	-o $(APP_NAME) .
 
+.PHONY: test
+test: ## Runs unit tests
+	go test -coverprofile coverage.out -v --race ./...
+	go tool cover -html=coverage.out -o coverage_report.html
 
 .PHONY: help
 help: ## Displays this help screen

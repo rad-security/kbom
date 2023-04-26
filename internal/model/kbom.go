@@ -1,8 +1,6 @@
 package model
 
-import (
-	"time"
-)
+import "time"
 
 type KBOM struct {
 	ID          string    `json:"id"`
@@ -24,12 +22,12 @@ type Tool struct {
 }
 
 type Cluster struct {
-	CACertDigest string   `json:"ca_cert_digest"`
-	K8sVersion   string   `json:"k8s_version"`
-	CNIVersion   string   `json:"cni_version,omitempty"`
-	Location     Location `json:"location"`
-	NodesCount   int      `json:"nodes_count"`
-	Nodes        []Node   `json:"nodes"`
+	CACertDigest string    `json:"ca_cert_digest"`
+	K8sVersion   string    `json:"k8s_version"`
+	CNIVersion   string    `json:"cni_version,omitempty"`
+	Location     *Location `json:"location"`
+	NodesCount   int       `json:"nodes_count"`
+	Nodes        []Node    `json:"nodes"`
 
 	Resources Resources `json:"resources"`
 }

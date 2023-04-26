@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"time"
@@ -35,6 +36,9 @@ var (
 	output  string
 	format  string
 	outPath string
+
+	generatedAt = time.Now().UTC()
+	kbomID      = uuid.New().String()
 )
 
 var GenerateCmd = &cobra.Command{
@@ -53,13 +57,16 @@ func init() {
 }
 
 func runGenerate(cmd *cobra.Command, _ []string) error {
-	ctx := context.Background()
-
 	k8sClient, err := kube.NewClient()
 	if err != nil {
 		return err
 	}
 
+	return generateKBOM(k8sClient)
+}
+
+func generateKBOM(k8sClient kube.K8sClient) error {
+	ctx := context.Background()
 	k8sVersion, caCertDigest, err := k8sClient.Metadata(ctx)
 	if err != nil {
 		return err
@@ -87,10 +94,10 @@ func runGenerate(cmd *cobra.Command, _ []string) error {
 	}
 
 	kbom := model.KBOM{
-		ID:          uuid.New().String(),
+		ID:          kbomID,
 		BOMFormat:   BOMFormat,
 		SpecVersion: SpecVersion,
-		GeneratedAt: time.Now(),
+		GeneratedAt: generatedAt,
 		GeneratedBy: model.Tool{
 			Vendor:     KSOCCompany,
 			BuildTime:  config.BuildTime,
@@ -100,7 +107,7 @@ func runGenerate(cmd *cobra.Command, _ []string) error {
 			CommitTime: config.LastCommitTime,
 		},
 		Cluster: model.Cluster{
-			Location:     *loc,
+			Location:     loc,
 			CNIVersion:   "", // TODO: get CNI version
 			K8sVersion:   k8sVersion,
 			CACertDigest: caCertDigest,
@@ -146,10 +153,10 @@ func printKBOM(kbom *model.KBOM) error {
 	return nil
 }
 
-func getWriter(kbom *model.KBOM) (*os.File, error) {
+func getWriter(kbom *model.KBOM) (io.WriteCloser, error) {
 	switch output {
 	case StdOutput:
-		return os.Stdout, nil
+		return out, nil
 	case FileOutput:
 		formattedTime := kbom.GeneratedAt.Format("2006-01-02-15-04-05")
 		key := kbom.ID[:8]

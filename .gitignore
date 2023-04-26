@@ -11,3 +11,7 @@ archive
 
 # BOM file
 bom.json
+
+# Coverage
+coverage.out
+coverage_report.html
