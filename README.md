@@ -4,6 +4,7 @@
 ![Hex.pm](https://img.shields.io/hexpm/l/apa)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ksoclabs/kbom)](https://goreportcard.com/report/github.com/ksoclabs/kbom)
 [![FOSSA Status](https://app.fossa.com/api/projects/custom%2B37386%2Fgithub.com%2Fksoclabs%2Fkbom.svg?type=shield)](https://app.fossa.com/projects/custom%2B37386%2Fgithub.com%2Fksoclabs%2Fkbom?ref=badge_shield)
+[![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/7273/badge)](https://bestpractices.coreinfrastructure.org/projects/7273)
 
 The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry.
 
