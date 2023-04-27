@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/ksoclabs/kbom/internal/config"
 	"github.com/ksoclabs/kbom/internal/kube"
@@ -143,6 +143,7 @@ func printKBOM(kbom *model.KBOM) error {
 		}
 	case YAMLFormat:
 		enc := yaml.NewEncoder(writer)
+		enc.SetIndent(2)
 		if err := enc.Encode(kbom); err != nil {
 			return err
 		}
