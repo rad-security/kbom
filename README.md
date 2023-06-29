@@ -37,8 +37,9 @@ kbom generate [flags]
 Optional flags include:
 
 ```plain
-  -f, --format string     Format (json, yaml) (default "json")
-  -h, --help              Help for generate
+Flags:
+  -f, --format string     Format (json, yaml, cyclonedx-json, cyclonedx-xml) (default "json")
+  -h, --help              help for generate
   -p, --out-path string   Path to write KBOM file to. Works only with --output=file (default ".")
   -o, --output string     Output (stdout, file) (default "stdout")
       --short             Short - only include metadata, nodes, images and resources counters

@@ -60,6 +60,9 @@ var expectedSchema = `{
     },
     "Cluster": {
       "properties": {
+        "name": {
+          "type": "string"
+        },
         "ca_cert_digest": {
           "type": "string"
         },
@@ -88,6 +91,7 @@ var expectedSchema = `{
       "additionalProperties": false,
       "type": "object",
       "required": [
+        "name",
         "ca_cert_digest",
         "k8s_version",
         "location",
@@ -98,7 +102,13 @@ var expectedSchema = `{
     },
     "Image": {
       "properties": {
+        "full_name": {
+          "type": "string"
+        },
         "name": {
+          "type": "string"
+        },
+        "version": {
           "type": "string"
         },
         "digest": {
@@ -108,7 +118,9 @@ var expectedSchema = `{
       "additionalProperties": false,
       "type": "object",
       "required": [
+        "full_name",
         "name",
+        "version",
         "digest"
       ]
     },

@@ -7,8 +7,10 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 	"time"
 
+	"github.com/CycloneDX/cyclonedx-go"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -26,9 +28,6 @@ const (
 
 	StdOutput  = "stdout"
 	FileOutput = "file"
-
-	JSONFormat = "json"
-	YAMLFormat = "yaml"
 )
 
 var (
@@ -37,7 +36,7 @@ var (
 	format  string
 	outPath string
 
-	generatedAt = time.Now().UTC()
+	generatedAt = time.Now()
 	kbomID      = uuid.New().String()
 )
 
@@ -50,14 +49,14 @@ var GenerateCmd = &cobra.Command{
 func init() {
 	GenerateCmd.Flags().BoolVar(&short, "short", false, "Short - only include metadata, nodes, images and resources counters")
 	GenerateCmd.Flags().StringVarP(&output, "output", "o", StdOutput, "Output (stdout, file)")
-	GenerateCmd.Flags().StringVarP(&format, "format", "f", JSONFormat, "Format (json, yaml)")
+	GenerateCmd.Flags().StringVarP(&format, "format", "f", JSONFormat.Name, fmt.Sprintf("Format (%s)", strings.Join(formatNames(), ", ")))
 	GenerateCmd.Flags().StringVarP(&outPath, "out-path", "p", ".", "Path to write KBOM file to. Works only with --output=file")
 
 	utils.BindFlags(GenerateCmd)
 }
 
 func runGenerate(cmd *cobra.Command, _ []string) error {
-	k8sClient, err := kube.NewClient()
+	k8sClient, err := kube.NewClient(k8sContext)
 	if err != nil {
 		return err
 	}
@@ -66,8 +65,18 @@ func runGenerate(cmd *cobra.Command, _ []string) error {
 }
 
 func generateKBOM(k8sClient kube.K8sClient) error {
+	parsedFormat, err := formatFromName(format)
+	if err != nil {
+		return err
+	}
+
 	ctx := context.Background()
 	k8sVersion, caCertDigest, err := k8sClient.Metadata(ctx)
+	if err != nil {
+		return err
+	}
+
+	clusterName, err := k8sClient.ClusterName(ctx)
 	if err != nil {
 		return err
 	}
@@ -107,6 +116,7 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 			CommitTime: config.LastCommitTime,
 		},
 		Cluster: model.Cluster{
+			Name:         clusterName,
 			Location:     loc,
 			CNIVersion:   "", // TODO: get CNI version
 			K8sVersion:   k8sVersion,
@@ -120,41 +130,47 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 		},
 	}
 
-	if err := printKBOM(&kbom); err != nil {
+	if err := printKBOM(&kbom, parsedFormat); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func printKBOM(kbom *model.KBOM) error {
-	writer, err := getWriter(kbom)
+func printKBOM(kbom *model.KBOM, f Format) error {
+	writer, err := getWriter(kbom, f)
 	if err != nil {
 		return err
 	}
 	defer writer.Close()
 
 	switch format {
-	case JSONFormat:
+	case JSONFormat.Name:
 		enc := json.NewEncoder(writer)
 		enc.SetIndent("", "  ")
-		if err := enc.Encode(kbom); err != nil {
-			return err
-		}
-	case YAMLFormat:
+		return enc.Encode(kbom)
+	case YAMLFormat.Name:
 		enc := yaml.NewEncoder(writer)
 		enc.SetIndent(2)
-		if err := enc.Encode(kbom); err != nil {
-			return err
-		}
+		return enc.Encode(kbom)
+	case CycloneDXJsonFormat.Name:
+		cyclonexKbom := transformToCycloneDXBOM(kbom)
+		enc := cyclonedx.NewBOMEncoder(writer, cyclonedx.BOMFileFormatJSON)
+		enc.SetPretty(true)
+		enc.SetEscapeHTML(false)
+		return enc.Encode(cyclonexKbom)
+	case CycloneDXXMLFormat.Name:
+		cyclonexKbom := transformToCycloneDXBOM(kbom)
+		enc := cyclonedx.NewBOMEncoder(writer, cyclonedx.BOMFileFormatXML)
+		enc.SetPretty(true)
+		enc.SetEscapeHTML(false)
+		return enc.Encode(cyclonexKbom)
 	default:
 		return fmt.Errorf("format %q is not supported", format)
 	}
-
-	return nil
 }
 
-func getWriter(kbom *model.KBOM) (io.WriteCloser, error) {
+func getWriter(kbom *model.KBOM, format Format) (io.WriteCloser, error) {
 	switch output {
 	case StdOutput:
 		return out, nil
@@ -165,7 +181,7 @@ func getWriter(kbom *model.KBOM) (io.WriteCloser, error) {
 			key = kbom.Cluster.CACertDigest[:8]
 		}
 
-		f, err := os.Create(path.Join(outPath, fmt.Sprintf("kbom-%s-%s.%s", key, formattedTime, format)))
+		f, err := os.Create(path.Join(outPath, fmt.Sprintf("kbom-%s-%s.%s", key, formattedTime, format.FileExtension)))
 		if err != nil {
 			return nil, err
 		}

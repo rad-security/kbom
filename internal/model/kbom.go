@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type KBOM struct {
 	ID          string    `json:"id"`
@@ -22,6 +25,7 @@ type Tool struct {
 }
 
 type Cluster struct {
+	Name         string    `json:"name"`
 	CACertDigest string    `json:"ca_cert_digest"`
 	K8sVersion   string    `json:"k8s_version"`
 	CNIVersion   string    `json:"cni_version,omitempty"`
@@ -77,8 +81,26 @@ type Node struct {
 }
 
 type Image struct {
-	Name   string `json:"name"`
-	Digest string `json:"digest"`
+	FullName string `json:"full_name"`
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	Digest   string `json:"digest"`
+}
+
+func (i *Image) PkgID() string {
+	if i.Digest == "" && i.Version == "" {
+		return fmt.Sprintf("pkg:%s", i.Name)
+	}
+
+	if i.Digest == "" {
+		return fmt.Sprintf("pkg:%s:%s", i.Name, i.Version)
+	}
+
+	if i.Version == "" {
+		return fmt.Sprintf("pkg:%s@%s", i.Name, i.Digest)
+	}
+
+	return fmt.Sprintf("pkg:%s:%s@%s", i.Name, i.Version, i.Digest)
 }
 
 type Capacity struct {

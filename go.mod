@@ -3,9 +3,11 @@ module github.com/ksoclabs/kbom
 go 1.20
 
 require (
+	github.com/CycloneDX/cyclonedx-go v0.7.2-0.20230625092137-07e2f29defc3
 	github.com/Masterminds/semver v1.5.0
 	github.com/google/uuid v1.3.0
 	github.com/invopop/jsonschema v0.7.0
+	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/rs/zerolog v1.29.1
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5

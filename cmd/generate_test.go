@@ -95,6 +95,9 @@ func TestGenerateKBOM(t *testing.T) {
 		{
 			name: "print full KBOM - stdout - json",
 			clientMock: &mockedK8sClient{
+				clusterName: func(context.Context) (string, error) {
+					return "test-cluster", nil
+				},
 				metadata: func(context.Context) (string, string, error) {
 					return "012345678", "1.25.1", nil
 				},
@@ -172,12 +175,16 @@ func TestGenerateKBOM(t *testing.T) {
 				allImages: func(context.Context) ([]model.Image, error) {
 					return []model.Image{
 						{
-							Name:   "nginx:1.17.1",
-							Digest: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+							Name:     "nginx",
+							Version:  "1.17.1",
+							FullName: "nginx:1.17.1",
+							Digest:   "sha256:0000000000000000000000000000000000000000000000000000000000000001",
 						},
 						{
-							Name:   "redis:7.0.1",
-							Digest: "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+							Name:     "redis",
+							Version:  "7.0.1",
+							FullName: "redis:7.0.1",
+							Digest:   "sha256:0000000000000000000000000000000000000000000000000000000000000002",
 						},
 					}, nil
 				},
@@ -210,7 +217,7 @@ func TestGenerateKBOM(t *testing.T) {
 			clientMock:  &mockedK8sClient{},
 			timeMock:    "2023-04-26T10:00:00.000000+00:00",
 			idMock:      "00000001",
-			format:      YAMLFormat,
+			format:      YAMLFormat.Name,
 			expectedOut: expectedOutYAML,
 		},
 		{
@@ -218,7 +225,7 @@ func TestGenerateKBOM(t *testing.T) {
 			clientMock:  &mockedK8sClient{},
 			timeMock:    "2023-04-26T10:00:00.000000+00:00",
 			idMock:      "00000001",
-			format:      YAMLFormat,
+			format:      YAMLFormat.Name,
 			output:      FileOutput,
 			expectedOut: expectedOutYAML,
 		},
@@ -238,7 +245,7 @@ func TestGenerateKBOM(t *testing.T) {
 			if tc.format != "" {
 				format = tc.format
 			} else {
-				format = JSONFormat
+				format = JSONFormat.Name
 			}
 
 			if tc.output != "" {
@@ -275,11 +282,19 @@ func TestGenerateKBOM(t *testing.T) {
 }
 
 type mockedK8sClient struct {
+	clusterName  func(context.Context) (string, error)
 	metadata     func(context.Context) (string, string, error)
 	location     func(context.Context) (*model.Location, error)
 	allImages    func(context.Context) ([]model.Image, error)
 	allNodes     func(context.Context, bool) ([]model.Node, error)
 	allResources func(context.Context, bool) (map[string]model.ResourceList, error)
+}
+
+func (m *mockedK8sClient) ClusterName(ctx context.Context) (clusterName string, err error) {
+	if m.clusterName == nil {
+		return "test-cluster", nil
+	}
+	return m.clusterName(ctx)
 }
 
 func (m *mockedK8sClient) Metadata(ctx context.Context) (ver, ca string, err error) {
@@ -288,6 +303,7 @@ func (m *mockedK8sClient) Metadata(ctx context.Context) (ver, ca string, err err
 	}
 	return m.metadata(ctx)
 }
+
 func (m *mockedK8sClient) Location(ctx context.Context) (*model.Location, error) {
 	if m.location == nil {
 		return nil, nil
@@ -332,6 +348,7 @@ var expectedOutJSON = `{
     "commit_time": "unknown"
   },
   "cluster": {
+    "name": "test-cluster",
     "ca_cert_digest": "1.25.1",
     "k8s_version": "012345678",
     "location": {
@@ -405,11 +422,15 @@ var expectedOutJSON = `{
     "resources": {
       "images": [
         {
-          "name": "nginx:1.17.1",
+          "full_name": "nginx:1.17.1",
+          "name": "nginx",
+          "version": "1.17.1",
           "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000001"
         },
         {
-          "name": "redis:7.0.1",
+          "full_name": "redis:7.0.1",
+          "name": "redis",
+          "version": "7.0.1",
           "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000002"
         }
       ],
@@ -445,6 +466,7 @@ generatedby:
   commit: unknown
   committime: unknown
 cluster:
+  name: test-cluster
   cacertdigest: "1234567890"
   k8sversion: 1.25.1
   cniversion: ""
