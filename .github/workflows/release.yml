@@ -56,7 +56,7 @@ jobs:
           check-latest: true # https://github.com/actions/setup-go#check-latest-version
           cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
 
-      - uses: sigstore/cosign-installer@v3.0.5          # installs cosign
+      - uses: sigstore/cosign-installer@v3.1.1          # installs cosign
       - uses: anchore/sbom-action/download-syft@v0.14.3 # installs syft
 
       - name: Login to GCR
