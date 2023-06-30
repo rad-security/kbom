@@ -21,7 +21,8 @@ const (
 )
 
 var (
-	verbose bool
+	verbose    bool
+	k8sContext string
 
 	out io.WriteCloser = os.Stdout
 )
@@ -45,7 +46,8 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(schemaCmd)
 
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "enable verbose logging (DEBUG and below)")
+	rootCmd.PersistentFlags().StringVarP(&k8sContext, "context", "c", "", "Kubernetes context to use, defaults to current context")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging (DEBUG and below)")
 
 	rootCmd.SilenceErrors = true
 	rootCmd.SilenceUsage = true

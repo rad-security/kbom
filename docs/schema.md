@@ -19,6 +19,8 @@ Instances
 
 Images
 - Name
+- FullName
+- Version
 - Digest
 
 KubeObjects

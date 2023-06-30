@@ -60,6 +60,9 @@ var expectedSchema = `{
     },
     "Cluster": {
       "properties": {
+        "name": {
+          "type": "string"
+        },
         "ca_cert_digest": {
           "type": "string"
         },
@@ -81,24 +84,54 @@ var expectedSchema = `{
           },
           "type": "array"
         },
-        "resources": {
-          "$ref": "#/$defs/Resources"
+        "components": {
+          "$ref": "#/$defs/Components"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
+        "name",
         "ca_cert_digest",
         "k8s_version",
         "location",
         "nodes_count",
         "nodes",
+        "components"
+      ]
+    },
+    "Components": {
+      "properties": {
+        "images": {
+          "items": {
+            "$ref": "#/$defs/Image"
+          },
+          "type": "array"
+        },
+        "resources": {
+          "patternProperties": {
+            ".*": {
+              "$ref": "#/$defs/ResourceList"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
         "resources"
       ]
     },
     "Image": {
       "properties": {
+        "full_name": {
+          "type": "string"
+        },
         "name": {
+          "type": "string"
+        },
+        "version": {
           "type": "string"
         },
         "digest": {
@@ -108,7 +141,9 @@ var expectedSchema = `{
       "additionalProperties": false,
       "type": "object",
       "required": [
+        "full_name",
         "name",
+        "version",
         "digest"
       ]
     },
@@ -147,7 +182,7 @@ var expectedSchema = `{
     },
     "Location": {
       "properties": {
-        "location": {
+        "name": {
           "type": "string"
         },
         "region": {
@@ -160,7 +195,7 @@ var expectedSchema = `{
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "location",
+        "name",
         "region",
         "zone"
       ]
@@ -292,29 +327,6 @@ var expectedSchema = `{
         "api_version",
         "namespaced",
         "count"
-      ]
-    },
-    "Resources": {
-      "properties": {
-        "images": {
-          "items": {
-            "$ref": "#/$defs/Image"
-          },
-          "type": "array"
-        },
-        "resources": {
-          "patternProperties": {
-            ".*": {
-              "$ref": "#/$defs/ResourceList"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "resources"
       ]
     },
     "Tool": {

@@ -21,6 +21,7 @@ import (
 )
 
 type K8sClient interface {
+	ClusterName(ctx context.Context) (string, error)
 	Metadata(ctx context.Context) (string, string, error)
 	Location(ctx context.Context) (*model.Location, error)
 	AllImages(ctx context.Context) ([]model.Image, error)
@@ -28,14 +29,32 @@ type K8sClient interface {
 	AllResources(ctx context.Context, full bool) (map[string]model.ResourceList, error)
 }
 
-func NewClient() (K8sClient, error) {
+func NewClient(k8sContext string) (K8sClient, error) {
+	currentK8sContext := k8sContext
+
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		kubeConfigPath := os.Getenv("KUBECONFIG")
 		if kubeConfigPath == "" {
 			kubeConfigPath = os.Getenv("HOME") + "/.kube/config"
 		}
-		cfg, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+
+		clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+			&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfigPath},
+			&clientcmd.ConfigOverrides{
+				CurrentContext: k8sContext,
+			})
+
+		rawConfig, err := clientConfig.RawConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get kubernetes out-cluster client: %w", err)
+		}
+
+		if k8sContext == "" {
+			currentK8sContext = rawConfig.CurrentContext
+		}
+
+		cfg, err = clientConfig.ClientConfig()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kubernetes out-cluster client: %w", err)
 		}
@@ -54,6 +73,7 @@ func NewClient() (K8sClient, error) {
 	rest.SetDefaultWarningHandler(rest.NoWarnings{})
 
 	return &k8sDB{
+		k8sContext:    currentK8sContext,
 		cfg:           cfg,
 		client:        clientset,
 		dynamicClient: dynamicClient,
@@ -61,9 +81,15 @@ func NewClient() (K8sClient, error) {
 }
 
 type k8sDB struct {
+	k8sContext    string
 	cfg           *rest.Config
 	client        kubernetes.Interface
 	dynamicClient dynamic.Interface
+}
+
+func (k *k8sDB) ClusterName(ctx context.Context) (string, error) {
+	// TODO: find a better way to get cluster name, but for now use cluster context name
+	return k.k8sContext, nil
 }
 
 func (k *k8sDB) Location(ctx context.Context) (*model.Location, error) {
@@ -79,9 +105,9 @@ func (k *k8sDB) Location(ctx context.Context) (*model.Location, error) {
 
 	// get location from node labels
 	return &model.Location{
-		Location: getCloudLocation(node.Items[0].Labels),
-		Region:   getLabelValue(node.Items[0].Labels, "topology.kubernetes.io/region"),
-		Zone:     getLabelValue(node.Items[0].Labels, "topology.kubernetes.io/zone"),
+		Name:   getCloudName(node.Items[0].Labels),
+		Region: getLabelValue(node.Items[0].Labels, "topology.kubernetes.io/region"),
+		Zone:   getLabelValue(node.Items[0].Labels, "topology.kubernetes.io/zone"),
 	}, nil
 }
 
@@ -189,7 +215,9 @@ func containerToImage(img, imgName string, statuses []v1.ContainerStatus) (*mode
 	}
 
 	res := &model.Image{
-		Name: img,
+		FullName: img,
+		Name:     strings.Split(strings.Split(img, "@sha256:")[0], ":")[0],
+		Version:  versionFromImage(img),
 	}
 
 	if strings.Contains(img, "@") {
@@ -205,12 +233,32 @@ func containerToImage(img, imgName string, statuses []v1.ContainerStatus) (*mode
 			}
 			if strings.Contains(statuses[i].ImageID, "@") {
 				res.Digest = strings.Split(statuses[i].ImageID, "@")[1]
+			} else if strings.HasPrefix(statuses[i].ImageID, "sha256:") {
+				res.Digest = statuses[i].ImageID
 			}
 			break
 		}
 	}
 
 	return res, nil
+}
+
+func versionFromImage(img string) string {
+	if strings.Contains(img, ":") {
+		if strings.Contains(img, "@") {
+			withoutDigest := strings.Split(img, "@")[0]
+
+			if strings.Contains(withoutDigest, ":") {
+				return strings.Split(withoutDigest, ":")[1]
+			}
+
+			return ""
+		}
+
+		return strings.Split(img, ":")[1]
+	}
+
+	return ""
 }
 
 // Metadata returns the kubernetes version
@@ -316,7 +364,7 @@ func getLabelValue(labels map[string]string, key string) string {
 	return ""
 }
 
-func getCloudLocation(labels map[string]string) string {
+func getCloudName(labels map[string]string) string {
 	if labels == nil {
 		return "unknown"
 	}
