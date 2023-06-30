@@ -25,18 +25,17 @@ type Tool struct {
 }
 
 type Cluster struct {
-	Name         string    `json:"name"`
-	CACertDigest string    `json:"ca_cert_digest"`
-	K8sVersion   string    `json:"k8s_version"`
-	CNIVersion   string    `json:"cni_version,omitempty"`
-	Location     *Location `json:"location"`
-	NodesCount   int       `json:"nodes_count"`
-	Nodes        []Node    `json:"nodes"`
-
-	Resources Resources `json:"resources"`
+	Name         string     `json:"name"`
+	CACertDigest string     `json:"ca_cert_digest"`
+	K8sVersion   string     `json:"k8s_version"`
+	CNIVersion   string     `json:"cni_version,omitempty"`
+	Location     *Location  `json:"location"`
+	NodesCount   int        `json:"nodes_count"`
+	Nodes        []Node     `json:"nodes"`
+	Components   Components `json:"components"`
 }
 
-type Resources struct {
+type Components struct {
 	Images    []Image                 `json:"images,omitempty"`
 	Resources map[string]ResourceList `json:"resources"`
 }
@@ -57,9 +56,9 @@ type ResourceList struct {
 }
 
 type Location struct {
-	Location string `json:"location"`
-	Region   string `json:"region"`
-	Zone     string `json:"zone"`
+	Name   string `json:"name"`
+	Region string `json:"region"`
+	Zone   string `json:"zone"`
 }
 
 type Node struct {

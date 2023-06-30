@@ -63,10 +63,10 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 		},
 	}
 
-	if kbom.Cluster.Location.Location != "" && kbom.Cluster.Location.Location != "unknown" {
+	if kbom.Cluster.Location.Name != "" && kbom.Cluster.Location.Name != "unknown" {
 		clusterProperties = append(clusterProperties, cyclonedx.Property{
-			Name:  KSOCPrefix + "k8s:cluster:location:location",
-			Value: kbom.Cluster.Location.Location,
+			Name:  KSOCPrefix + "k8s:cluster:location:name",
+			Value: kbom.Cluster.Location.Name,
 		})
 	}
 
@@ -110,7 +110,7 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Value: n.Name,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:osimage",
+					Name:  KSOCPrefix + "k8s:node:osImage",
 					Value: n.OsImage,
 				},
 				{
@@ -122,7 +122,7 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Value: n.KernelVersion,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:bootid",
+					Name:  KSOCPrefix + "k8s:node:bootId",
 					Value: n.BootID,
 				},
 				{
@@ -130,11 +130,11 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Value: n.Type,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:operatingsystem",
+					Name:  KSOCPrefix + "k8s:node:operatingSystem",
 					Value: n.OperatingSystem,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:machineid",
+					Name:  KSOCPrefix + "k8s:node:machineId",
 					Value: n.MachineID,
 				},
 				{
@@ -142,15 +142,15 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Value: n.Hostname,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:containerruntimeversion",
+					Name:  KSOCPrefix + "k8s:node:containerRuntimeVersion",
 					Value: n.ContainerRuntimeVersion,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:kubeletversion",
+					Name:  KSOCPrefix + "k8s:node:kubeletVersion",
 					Value: n.KubeletVersion,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:kubeproxyversion",
+					Name:  KSOCPrefix + "k8s:node:kubeProxyVersion",
 					Value: n.KubeProxyVersion,
 				},
 				{
@@ -166,14 +166,14 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Value: n.Capacity.Pods,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:capacity:ephemeralstorage",
+					Name:  KSOCPrefix + "k8s:node:capacity:ephemeralStorage",
 					Value: n.Capacity.EphemeralStorage,
 				},
 			},
 		})
 	}
 
-	for _, img := range kbom.Cluster.Resources.Images {
+	for _, img := range kbom.Cluster.Components.Images {
 		container := cyclonedx.Component{
 			BOMRef:     img.PkgID(),
 			Type:       cyclonedx.ComponentTypeContainer,
@@ -211,7 +211,7 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 		components = append(components, container)
 	}
 
-	for _, resList := range kbom.Cluster.Resources.Resources {
+	for _, resList := range kbom.Cluster.Components.Resources {
 		for _, res := range resList.Resources {
 			properties := []cyclonedx.Property{
 				{
@@ -223,7 +223,7 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Value: res.Name,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:component:apiversion",
+					Name:  KSOCPrefix + "k8s:component:apiVersion",
 					Value: resList.APIVersion,
 				},
 			}

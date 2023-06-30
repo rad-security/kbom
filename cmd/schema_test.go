@@ -84,8 +84,8 @@ var expectedSchema = `{
           },
           "type": "array"
         },
-        "resources": {
-          "$ref": "#/$defs/Resources"
+        "components": {
+          "$ref": "#/$defs/Components"
         }
       },
       "additionalProperties": false,
@@ -97,6 +97,29 @@ var expectedSchema = `{
         "location",
         "nodes_count",
         "nodes",
+        "components"
+      ]
+    },
+    "Components": {
+      "properties": {
+        "images": {
+          "items": {
+            "$ref": "#/$defs/Image"
+          },
+          "type": "array"
+        },
+        "resources": {
+          "patternProperties": {
+            ".*": {
+              "$ref": "#/$defs/ResourceList"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
         "resources"
       ]
     },
@@ -159,7 +182,7 @@ var expectedSchema = `{
     },
     "Location": {
       "properties": {
-        "location": {
+        "name": {
           "type": "string"
         },
         "region": {
@@ -172,7 +195,7 @@ var expectedSchema = `{
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "location",
+        "name",
         "region",
         "zone"
       ]
@@ -304,29 +327,6 @@ var expectedSchema = `{
         "api_version",
         "namespaced",
         "count"
-      ]
-    },
-    "Resources": {
-      "properties": {
-        "images": {
-          "items": {
-            "$ref": "#/$defs/Image"
-          },
-          "type": "array"
-        },
-        "resources": {
-          "patternProperties": {
-            ".*": {
-              "$ref": "#/$defs/ResourceList"
-            }
-          },
-          "type": "object"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "resources"
       ]
     },
     "Tool": {

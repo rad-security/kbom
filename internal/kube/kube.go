@@ -105,9 +105,9 @@ func (k *k8sDB) Location(ctx context.Context) (*model.Location, error) {
 
 	// get location from node labels
 	return &model.Location{
-		Location: getCloudLocation(node.Items[0].Labels),
-		Region:   getLabelValue(node.Items[0].Labels, "topology.kubernetes.io/region"),
-		Zone:     getLabelValue(node.Items[0].Labels, "topology.kubernetes.io/zone"),
+		Name:   getCloudName(node.Items[0].Labels),
+		Region: getLabelValue(node.Items[0].Labels, "topology.kubernetes.io/region"),
+		Zone:   getLabelValue(node.Items[0].Labels, "topology.kubernetes.io/zone"),
 	}, nil
 }
 
@@ -142,7 +142,7 @@ func (k *k8sDB) AllNodes(ctx context.Context, full bool) ([]model.Node, error) {
 			MachineID:               nodes.Items[i].Status.NodeInfo.MachineID,
 			Architecture:            nodes.Items[i].Status.NodeInfo.Architecture,
 			KernelVersion:           nodes.Items[i].Status.NodeInfo.KernelVersion,
-			ContainerRuntimeVersion: strings.TrimPrefix(nodes.Items[i].Status.NodeInfo.ContainerRuntimeVersion, "containerd://"),
+			ContainerRuntimeVersion: nodes.Items[i].Status.NodeInfo.ContainerRuntimeVersion,
 			BootID:                  nodes.Items[i].Status.NodeInfo.BootID,
 			KubeProxyVersion:        nodes.Items[i].Status.NodeInfo.KubeProxyVersion,
 			KubeletVersion:          nodes.Items[i].Status.NodeInfo.KubeletVersion,
@@ -233,8 +233,7 @@ func containerToImage(img, imgName string, statuses []v1.ContainerStatus) (*mode
 			}
 			if strings.Contains(statuses[i].ImageID, "@") {
 				res.Digest = strings.Split(statuses[i].ImageID, "@")[1]
-			}
-			if strings.HasPrefix(statuses[i].ImageID, "sha256:") {
+			} else if strings.HasPrefix(statuses[i].ImageID, "sha256:") {
 				res.Digest = statuses[i].ImageID
 			}
 			break
@@ -365,7 +364,7 @@ func getLabelValue(labels map[string]string, key string) string {
 	return ""
 }
 
-func getCloudLocation(labels map[string]string) string {
+func getCloudName(labels map[string]string) string {
 	if labels == nil {
 		return "unknown"
 	}

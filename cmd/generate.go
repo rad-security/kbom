@@ -24,7 +24,7 @@ import (
 const (
 	KSOCCompany = "KSOC Labs"
 	BOMFormat   = "ksoc"
-	SpecVersion = "0.1"
+	SpecVersion = "0.2"
 
 	StdOutput  = "stdout"
 	FileOutput = "file"
@@ -123,7 +123,7 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 			CACertDigest: caCertDigest,
 			NodesCount:   len(nodes),
 			Nodes:        nodes,
-			Resources: model.Resources{
+			Components: model.Components{
 				Images:    allImages,
 				Resources: resources,
 			},

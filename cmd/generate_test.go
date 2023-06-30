@@ -103,9 +103,9 @@ func TestGenerateKBOM(t *testing.T) {
 				},
 				location: func(context.Context) (*model.Location, error) {
 					return &model.Location{
-						Location: "aws",
-						Region:   "us-east-1",
-						Zone:     "us-east-1a",
+						Name:   "aws",
+						Region: "us-east-1",
+						Zone:   "us-east-1a",
 					}, nil
 				},
 				allNodes: func(context.Context, bool) ([]model.Node, error) {
@@ -337,7 +337,7 @@ var mockCACert = "1234567890"
 var expectedOutJSON = `{
   "id": "00000001",
   "bom_format": "ksoc",
-  "spec_version": "0.1",
+  "spec_version": "0.2",
   "generated_at": "2023-04-26T10:00:00Z",
   "generated_by": {
     "vendor": "KSOC Labs",
@@ -352,7 +352,7 @@ var expectedOutJSON = `{
     "ca_cert_digest": "1.25.1",
     "k8s_version": "012345678",
     "location": {
-      "location": "aws",
+      "name": "aws",
       "region": "us-east-1",
       "zone": "us-east-1a"
     },
@@ -419,7 +419,7 @@ var expectedOutJSON = `{
         "os_image": "Bottlerocket OS 1.11.1 (aws-k8s-1.24)"
       }
     ],
-    "resources": {
+    "components": {
       "images": [
         {
           "full_name": "nginx:1.17.1",
@@ -456,7 +456,7 @@ var expectedOutJSON = `{
 `
 var expectedOutYAML = `id: "00000001"
 bomformat: ksoc
-specversion: "0.1"
+specversion: "0.2"
 generatedat: 2023-04-26T10:00:00Z
 generatedby:
   vendor: KSOC Labs
@@ -473,7 +473,7 @@ cluster:
   location: null
   nodescount: 0
   nodes: []
-  resources:
+  components:
     images: []
     resources: {}
 `
