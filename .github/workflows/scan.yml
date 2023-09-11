@@ -16,7 +16,7 @@ jobs:
   scan-fossa:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.6.0
+      - uses: actions/checkout@v4.0.0
       - name: Run FOSSA scan and upload build data
         uses: fossa-contrib/fossa-action@v2.0.0
         with:
@@ -30,7 +30,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3.6.0
+        uses: actions/checkout@v4.0.0
       - name: Setup Go
         uses: actions/setup-go@v4.1.0
         with:
