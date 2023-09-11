@@ -138,6 +138,12 @@ func (k *k8sDB) AllNodes(ctx context.Context, full bool) ([]model.Node, error) {
 				EphemeralStorage: nodes.Items[i].Status.Capacity.StorageEphemeral().String(),
 				Pods:             nodes.Items[i].Status.Capacity.Pods().String(),
 			},
+			Allocatable: &model.Capacity{
+				CPU:              nodes.Items[i].Status.Allocatable.Cpu().String(),
+				Memory:           nodes.Items[i].Status.Allocatable.Memory().String(),
+				EphemeralStorage: nodes.Items[i].Status.Allocatable.StorageEphemeral().String(),
+				Pods:             nodes.Items[i].Status.Allocatable.Pods().String(),
+			},
 			Labels:                  labels,
 			Annotations:             annotations,
 			MachineID:               nodes.Items[i].Status.NodeInfo.MachineID,
