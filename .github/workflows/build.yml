@@ -2,26 +2,53 @@ name: build
 
 on:
   pull_request:
-  workflow_call:
-    secrets:
-      PERSONAL_ACCESS_TOKEN:
-        required: true
-
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    if: startsWith(github.head_ref, 'renovate') == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detect Version for Docker
+        id: docker-version
+        run: echo "VERSION=$(SEP="-" scripts/version)" >> $GITHUB_OUTPUT
+      - name: Detect Version
+        id: version
+        run: echo "VERSION=$(scripts/version)" >> $GITHUB_OUTPUT
+    outputs:
+      docker-version: ${{ steps.docker-version.outputs.VERSION }}
+      version: ${{ steps.version.outputs.VERSION }}
+
   build:
     runs-on: ubuntu-latest
+    needs:
+      - version
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.20'
+          go-version: '1.21'
           check-latest: true # https://github.com/actions/setup-go#check-latest-version
           cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
 
       - name: Build
         run: go build -race ./...
+
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          version: latest
+          install-only: true
+
+      - name: Snapshot
+        if: startsWith(github.ref , 'refs/tags/v') == false
+        run: make snapshot
+        env:
+          GORELEASER_CURRENT_TAG: ${{ needs.version.outputs.docker-version }}
 
       - name: Grype scan
         id: scan
