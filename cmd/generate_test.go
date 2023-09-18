@@ -116,9 +116,15 @@ func TestGenerateKBOM(t *testing.T) {
 							Hostname: "ip-10-0-65-00.us-east-1.compute.internal",
 							Capacity: &model.Capacity{
 								CPU:              "2",
-								Memory:           "1973316Ki",
+								Memory:           "1970512Ki",
 								Pods:             "11",
-								EphemeralStorage: "516052280Ki",
+								EphemeralStorage: "524275692Ki",
+							},
+							Allocatable: &model.Capacity{
+								CPU:              "1930m",
+								Memory:           "1483088Ki",
+								Pods:             "11",
+								EphemeralStorage: "482098735124",
 							},
 							Labels: map[string]string{
 								"beta.kubernetes.io/arch":          "amd64",
@@ -145,10 +151,16 @@ func TestGenerateKBOM(t *testing.T) {
 							Type:     "t3.small",
 							Hostname: "ip-10-0-65-01.us-east-1.compute.internal",
 							Capacity: &model.Capacity{
-								CPU:              "4",
-								Memory:           "4000000Ki",
-								Pods:             "45",
-								EphemeralStorage: "516052280Ki",
+								CPU:              "2",
+								Memory:           "1970512Ki",
+								Pods:             "11",
+								EphemeralStorage: "524275692Ki",
+							},
+							Allocatable: &model.Capacity{
+								CPU:              "1930m",
+								Memory:           "1483088Ki",
+								Pods:             "11",
+								EphemeralStorage: "482098735124",
 							},
 							Labels: map[string]string{
 								"beta.kubernetes.io/arch":          "amd64",
@@ -364,9 +376,15 @@ var expectedOutJSON = `{
         "hostname": "ip-10-0-65-00.us-east-1.compute.internal",
         "capacity": {
           "cpu": "2",
-          "memory": "1973316Ki",
+          "memory": "1970512Ki",
           "pods": "11",
-          "ephemeral_storage": "516052280Ki"
+          "ephemeral_storage": "524275692Ki"
+        },
+        "allocatable": {
+          "cpu": "1930m",
+          "memory": "1483088Ki",
+          "pods": "11",
+          "ephemeral_storage": "482098735124"
         },
         "labels": {
           "beta.kubernetes.io/arch": "amd64",
@@ -393,10 +411,16 @@ var expectedOutJSON = `{
         "type": "t3.small",
         "hostname": "ip-10-0-65-01.us-east-1.compute.internal",
         "capacity": {
-          "cpu": "4",
-          "memory": "4000000Ki",
-          "pods": "45",
-          "ephemeral_storage": "516052280Ki"
+          "cpu": "2",
+          "memory": "1970512Ki",
+          "pods": "11",
+          "ephemeral_storage": "524275692Ki"
+        },
+        "allocatable": {
+          "cpu": "1930m",
+          "memory": "1483088Ki",
+          "pods": "11",
+          "ephemeral_storage": "482098735124"
         },
         "labels": {
           "beta.kubernetes.io/arch": "amd64",

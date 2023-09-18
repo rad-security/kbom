@@ -10,6 +10,7 @@ Instances
 - CloudType
 - Creation Timestamp
 - Capacity
+- Allocatable resources
 - OS Version
 - Kernel Version
 - Architecture

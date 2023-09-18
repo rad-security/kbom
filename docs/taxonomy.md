@@ -21,23 +21,27 @@ Following Taxonomy is used by the `KBOM` tool as extension to: [https://github.c
 
 ## `ksoc:kbom:k8s:node` Namespace Taxonomy
 
-| Property                                       | Description                       |
-| ---------------------------------------------- | --------------------------------- |
-| `ksoc:kbom:k8s:node:osImage`                   | Node's operating system image     |
-| `ksoc:kbom:k8s:node:arch`                      | Node's architecture               |
-| `ksoc:kbom:k8s:node:kernel`                    | Node's kernel version             |
-| `ksoc:kbom:k8s:node:bootId`                    | Node's Boot identifier            |
-| `ksoc:kbom:k8s:node:type`                      | Node's type                       |
-| `ksoc:kbom:k8s:node:operatingSystem`           | Node's operating system           |
-| `ksoc:kbom:k8s:node:machineId`                 | Node's machine identifier         |
-| `ksoc:kbom:k8s:node:hostname`                  | Node's hostname                   |
-| `ksoc:kbom:k8s:node:containerRuntimeVersion`   | Node's container runtime version  |
-| `ksoc:kbom:k8s:node:kubeletVersion`            | Node's kubelet version            |
-| `ksoc:kbom:k8s:node:kubeProxyVersion`          | Node's kube proxy version         |
-| `ksoc:kbom:k8s:node:capacity:cpu`              | Node's CPU capacity               |
-| `ksoc:kbom:k8s:node:capacity:memory`           | Node's Memory capacity            |
-| `ksoc:kbom:k8s:node:capacity:pods`             | Node's Pods capacity              |
-| `ksoc:kbom:k8s:node:capacity:ephemeralStorage` | Node's ephemeral storage capacity |
+| Property                                           | Description                          |
+| -------------------------------------------------- | ------------------------------------ |
+| `ksoc:kbom:k8s:node:osImage`                       | Node's operating system image        |
+| `ksoc:kbom:k8s:node:arch`                          | Node's architecture                  |
+| `ksoc:kbom:k8s:node:kernel`                        | Node's kernel version                |
+| `ksoc:kbom:k8s:node:bootId`                        | Node's Boot identifier               |
+| `ksoc:kbom:k8s:node:type`                          | Node's type                          |
+| `ksoc:kbom:k8s:node:operatingSystem`               | Node's operating system              |
+| `ksoc:kbom:k8s:node:machineId`                     | Node's machine identifier            |
+| `ksoc:kbom:k8s:node:hostname`                      | Node's hostname                      |
+| `ksoc:kbom:k8s:node:containerRuntimeVersion`       | Node's container runtime version     |
+| `ksoc:kbom:k8s:node:kubeletVersion`                | Node's kubelet version               |
+| `ksoc:kbom:k8s:node:kubeProxyVersion`              | Node's kube proxy version            |
+| `ksoc:kbom:k8s:node:capacity:cpu`                  | Node's CPU capacity                  |
+| `ksoc:kbom:k8s:node:capacity:memory`               | Node's Memory capacity               |
+| `ksoc:kbom:k8s:node:capacity:pods`                 | Node's Pods capacity                 |
+| `ksoc:kbom:k8s:node:capacity:ephemeralStorage`     | Node's ephemeral storage capacity    |
+| `ksoc:kbom:k8s:node:allocatable:cpu`               | Node's allocatable CPU               |
+| `ksoc:kbom:k8s:node:allocatable:memory`            | Node's allocatable Memory            |
+| `ksoc:kbom:k8s:node:allocatable:pods`              | Node's allocatable Pods              |
+| `ksoc:kbom:k8s:node:allocatable:ephemeralStorage`  | Node's allocatable ephemeral storage |
 
 ## `ksoc:kbom:pkg` Namespace Taxonomy
 

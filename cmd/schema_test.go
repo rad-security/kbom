@@ -214,6 +214,9 @@ var expectedSchema = `{
         "capacity": {
           "$ref": "#/$defs/Capacity"
         },
+        "allocatable": {
+          "$ref": "#/$defs/Capacity"
+        },
         "labels": {
           "patternProperties": {
             ".*": {
@@ -265,6 +268,7 @@ var expectedSchema = `{
         "type",
         "hostname",
         "capacity",
+        "allocatable",
         "labels",
         "annotations",
         "machine_id",

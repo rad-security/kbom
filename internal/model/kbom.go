@@ -66,6 +66,7 @@ type Node struct {
 	Type                    string            `json:"type"`
 	Hostname                string            `json:"hostname"`
 	Capacity                *Capacity         `json:"capacity"`
+	Allocatable             *Capacity         `json:"allocatable"`
 	Labels                  map[string]string `json:"labels"`
 	Annotations             map[string]string `json:"annotations"`
 	MachineID               string            `json:"machine_id"`

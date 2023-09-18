@@ -169,6 +169,22 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Name:  KSOCPrefix + "k8s:node:capacity:ephemeralStorage",
 					Value: n.Capacity.EphemeralStorage,
 				},
+				{
+					Name:  KSOCPrefix + "k8s:node:allocatable:cpu",
+					Value: n.Allocatable.CPU,
+				},
+				{
+					Name:  KSOCPrefix + "k8s:node:allocatable:memory",
+					Value: n.Allocatable.Memory,
+				},
+				{
+					Name:  KSOCPrefix + "k8s:node:allocatable:pods",
+					Value: n.Allocatable.Pods,
+				},
+				{
+					Name:  KSOCPrefix + "k8s:node:allocatable:ephemeralStorage",
+					Value: n.Allocatable.EphemeralStorage,
+				},
 			},
 		})
 	}
