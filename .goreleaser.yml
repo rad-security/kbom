@@ -71,7 +71,7 @@ signs:
     output: true
 
 brews:
-  - tap:
+  - repository:
       owner: ksoclabs
       name: homebrew-kbom
     homepage: "https://github.com/ksoclabs/kbom"
