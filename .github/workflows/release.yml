@@ -67,7 +67,7 @@ jobs:
           password: ${{ secrets.PUBLIC_GCR_JSON_KEY }}
 
       - name: Install GoReleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
           install-only: true
