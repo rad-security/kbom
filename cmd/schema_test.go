@@ -109,10 +109,8 @@ var expectedSchema = `{
           "type": "array"
         },
         "resources": {
-          "patternProperties": {
-            ".*": {
-              "$ref": "#/$defs/ResourceList"
-            }
+          "additionalProperties": {
+            "$ref": "#/$defs/ResourceList"
           },
           "type": "object"
         }
@@ -218,18 +216,14 @@ var expectedSchema = `{
           "$ref": "#/$defs/Capacity"
         },
         "labels": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
+          "additionalProperties": {
+            "type": "string"
           },
           "type": "object"
         },
         "annotations": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
+          "additionalProperties": {
+            "type": "string"
           },
           "type": "object"
         },

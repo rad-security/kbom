@@ -83,11 +83,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
-      - name: Snapshot
-        if: startsWith(github.ref , 'refs/tags/v') == false
-        run: make snapshot
-        env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          GORELEASER_CURRENT_TAG: ${{ needs.version.outputs.docker-version }}
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
