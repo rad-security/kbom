@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run FOSSA scan and upload build data
-        uses: fossa-contrib/fossa-action@v2
+        uses: fossa-contrib/fossa-action@v3
         with:
           fossa-api-key: 0580abfd8ed19432331e14f6e9eaa7ff
 
