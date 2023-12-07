@@ -49,14 +49,14 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
           check-latest: true # https://github.com/actions/setup-go#check-latest-version
           cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
 
-      - uses: sigstore/cosign-installer@v3.1.2          # installs cosign
-      - uses: anchore/sbom-action/download-syft@v0.14.3 # installs syft
+      - uses: sigstore/cosign-installer@v3
+      - uses: anchore/sbom-action/download-syft@v0.15
 
       - name: Login to GCR
         uses: docker/login-action@v3
