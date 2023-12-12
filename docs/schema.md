@@ -23,6 +23,7 @@ Images
 - FullName
 - Version
 - Digest
+- Namespace
 
 KubeObjects
 - Kind
