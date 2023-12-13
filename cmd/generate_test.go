@@ -187,16 +187,18 @@ func TestGenerateKBOM(t *testing.T) {
 				allImages: func(context.Context) ([]model.Image, error) {
 					return []model.Image{
 						{
-							Name:     "nginx",
-							Version:  "1.17.1",
-							FullName: "nginx:1.17.1",
-							Digest:   "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+							Name:      "nginx",
+							Version:   "1.17.1",
+							FullName:  "nginx:1.17.1",
+							Digest:    "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+							Namespace: "default",
 						},
 						{
-							Name:     "redis",
-							Version:  "7.0.1",
-							FullName: "redis:7.0.1",
-							Digest:   "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+							Name:      "redis",
+							Version:   "7.0.1",
+							FullName:  "redis:7.0.1",
+							Digest:    "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+							Namespace: "default",
 						},
 					}, nil
 				},
@@ -449,13 +451,15 @@ var expectedOutJSON = `{
           "full_name": "nginx:1.17.1",
           "name": "nginx",
           "version": "1.17.1",
-          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000001"
+          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+          "namespace": "default"
         },
         {
           "full_name": "redis:7.0.1",
           "name": "redis",
           "version": "7.0.1",
-          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+          "namespace": "default"
         }
       ],
       "resources": {

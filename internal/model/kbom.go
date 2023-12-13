@@ -81,10 +81,11 @@ type Node struct {
 }
 
 type Image struct {
-	FullName string `json:"full_name"`
-	Name     string `json:"name"`
-	Version  string `json:"version"`
-	Digest   string `json:"digest"`
+	FullName  string `json:"full_name"`
+	Name      string `json:"name"`
+	Version   string `json:"version"`
+	Digest    string `json:"digest"`
+	Namespace string `json:"namespace"`
 }
 
 func (i *Image) PkgID() string {

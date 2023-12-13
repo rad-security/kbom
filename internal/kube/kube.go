@@ -172,14 +172,14 @@ func (k *k8sDB) AllImages(ctx context.Context) ([]model.Image, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to list pods: %w", err)
 		}
-
-		log.Debug().Str("namespace", namespaces.Items[i].Name).Int("count", len(pods.Items)).Msg("Found pods in namespace")
+		namespace := namespaces.Items[i].Name
+		log.Debug().Str("namespace", namespace).Int("count", len(pods.Items)).Msg("Found pods in namespace")
 
 		for j := range pods.Items {
 			pod := pods.Items[j]
 
 			for k := range pod.Spec.InitContainers {
-				img, err := containerToImage(pod.Spec.InitContainers[k].Image, pod.Spec.InitContainers[k].Name, pod.Status.InitContainerStatuses)
+				img, err := containerToImage(pod.Spec.InitContainers[k].Image, pod.Spec.InitContainers[k].Name, pod.Status.InitContainerStatuses, namespace)
 				if err != nil {
 					return nil, err
 				}
@@ -188,7 +188,7 @@ func (k *k8sDB) AllImages(ctx context.Context) ([]model.Image, error) {
 			}
 
 			for k := range pod.Spec.Containers {
-				img, err := containerToImage(pod.Spec.Containers[k].Image, pod.Spec.Containers[k].Name, pod.Status.ContainerStatuses)
+				img, err := containerToImage(pod.Spec.Containers[k].Image, pod.Spec.Containers[k].Name, pod.Status.ContainerStatuses, namespace)
 				if err != nil {
 					return nil, err
 				}
@@ -198,7 +198,7 @@ func (k *k8sDB) AllImages(ctx context.Context) ([]model.Image, error) {
 
 			for k := range pod.Spec.EphemeralContainers {
 				img, err := containerToImage(pod.Spec.EphemeralContainers[k].Image,
-					pod.Spec.EphemeralContainers[k].Name, pod.Status.EphemeralContainerStatuses)
+					pod.Spec.EphemeralContainers[k].Name, pod.Status.EphemeralContainerStatuses, namespace)
 				if err != nil {
 					return nil, err
 				}
@@ -216,15 +216,16 @@ func (k *k8sDB) AllImages(ctx context.Context) ([]model.Image, error) {
 	return toReturn, nil
 }
 
-func containerToImage(img, imgName string, statuses []v1.ContainerStatus) (*model.Image, error) {
+func containerToImage(img, imgName string, statuses []v1.ContainerStatus, namespace string) (*model.Image, error) {
 	if img == "" {
 		return nil, fmt.Errorf("container %s has no image", img)
 	}
 
 	res := &model.Image{
-		FullName: img,
-		Name:     strings.Split(strings.Split(img, "@sha256:")[0], ":")[0],
-		Version:  versionFromImage(img),
+		FullName:  img,
+		Name:      strings.Split(strings.Split(img, "@sha256:")[0], ":")[0],
+		Version:   versionFromImage(img),
+		Namespace: namespace,
 	}
 
 	if strings.Contains(img, "@") {

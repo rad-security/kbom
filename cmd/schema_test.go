@@ -134,6 +134,9 @@ var expectedSchema = `{
         },
         "digest": {
           "type": "string"
+        },
+        "namespace": {
+          "type": "string"
         }
       },
       "additionalProperties": false,
@@ -142,7 +145,8 @@ var expectedSchema = `{
         "full_name",
         "name",
         "version",
-        "digest"
+        "digest",
+        "namespace"
       ]
     },
     "KBOM": {
