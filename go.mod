@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/CycloneDX/cyclonedx-go v0.7.2
 	github.com/Masterminds/semver v1.5.0
+	github.com/distribution/reference v0.5.0
 	github.com/google/uuid v1.4.0
 	github.com/invopop/jsonschema v0.12.0
 	github.com/mitchellh/hashstructure/v2 v2.0.2
@@ -48,6 +49,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect

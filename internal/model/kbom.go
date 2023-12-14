@@ -2,7 +2,16 @@ package model
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
+)
+
+const (
+	ociPrefix         = "oci"
+	k8sPrefix         = "k8s"
+	pkgPrefix         = "pkg"
+	kubernetesPkgName = "k8s.io/kubernetes"
 )
 
 type KBOM struct {
@@ -33,6 +42,14 @@ type Cluster struct {
 	NodesCount   int        `json:"nodes_count"`
 	Nodes        []Node     `json:"nodes"`
 	Components   Components `json:"components"`
+}
+
+func (c *Cluster) BOMRef() string {
+	return fmt.Sprintf("%s:%s/%s@%s", pkgPrefix, k8sPrefix, url.QueryEscape(kubernetesPkgName), c.K8sVersion)
+}
+
+func (c *Cluster) BOMName() string {
+	return kubernetesPkgName
 }
 
 type Components struct {
@@ -81,26 +98,30 @@ type Node struct {
 }
 
 type Image struct {
-	FullName string `json:"full_name"`
-	Name     string `json:"name"`
-	Version  string `json:"version"`
-	Digest   string `json:"digest"`
+	FullName     string `json:"full_name"`
+	Name         string `json:"name"`
+	Version      string `json:"version"`
+	Digest       string `json:"digest"`
+	ControlPlane bool   `json:"-"`
 }
 
 func (i *Image) PkgID() string {
-	if i.Digest == "" && i.Version == "" {
-		return fmt.Sprintf("pkg:%s", i.Name)
+	parts := strings.Split(i.Name, "/")
+	baseName := fmt.Sprintf("%s:%s/%s", pkgPrefix, ociPrefix, parts[len(parts)-1])
+
+	urlValues := url.Values{
+		"repository_url": []string{i.Name},
 	}
 
-	if i.Digest == "" {
-		return fmt.Sprintf("pkg:%s:%s", i.Name, i.Version)
+	if i.Version != "" {
+		urlValues.Add("tag", i.Version)
 	}
 
-	if i.Version == "" {
-		return fmt.Sprintf("pkg:%s@%s", i.Name, i.Digest)
+	if i.Digest != "" {
+		baseName = fmt.Sprintf("%s@%s", baseName, url.QueryEscape(i.Digest))
 	}
 
-	return fmt.Sprintf("pkg:%s:%s@%s", i.Name, i.Version, i.Digest)
+	return fmt.Sprintf("%s?%s", baseName, urlValues.Encode())
 }
 
 type Capacity struct {

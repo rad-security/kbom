@@ -1,10 +1,11 @@
-## KBOM Schema
+# KBOM Schema
 
 The section below describes the high level object model for KBOM.
 
-Cluster Details
+## Cluster Details
 
-Instances
+Instances:
+
 - Name
 - Hostname
 - CloudType
@@ -18,13 +19,15 @@ Instances
 - Kubelet Version
 - Kube Proxy Version
 
-Images
+Images:
+
 - Name
 - FullName
 - Version
 - Digest
 
-KubeObjects
+KubeObjects:
+
 - Kind
 - Api Version
 - Count

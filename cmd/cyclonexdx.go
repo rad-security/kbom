@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"hash/fnv"
+	"slices"
 	"time"
 
 	"github.com/CycloneDX/cyclonedx-go"
@@ -12,8 +13,10 @@ import (
 )
 
 const (
-	CdxPrefix  = "cdx:"
-	KSOCPrefix = "ksoc:kbom:"
+	CdxPrefix        = "cdx:"
+	KSOCPrefix       = "ksoc:kbom:"
+	K8sComponentType = "k8s:component:type"
+	K8sComponentName = "k8s:component:name"
 
 	ClusterType   = "cluster"
 	NodeType      = "node"
@@ -33,24 +36,13 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 				Version: kbom.GeneratedBy.Version,
 			},
 		},
-		Component: &cyclonedx.Component{
-			BOMRef: id(kbom.GeneratedBy),
-			Type:   cyclonedx.ComponentTypeApplication,
-			Name:   kbom.GeneratedBy.Name,
-			Hashes: &[]cyclonedx.Hash{
-				{
-					Algorithm: cyclonedx.HashAlgoSHA256,
-					Value:     kbom.GeneratedBy.Commit,
-				},
-			},
-			Version: kbom.GeneratedBy.Version,
-		},
 	}
 
 	components := []cyclonedx.Component{}
+	dependencies := []cyclonedx.Dependency{}
 	clusterProperties := []cyclonedx.Property{
 		{
-			Name:  CdxPrefix + "k8s:component:type",
+			Name:  CdxPrefix + K8sComponentType,
 			Value: ClusterType,
 		},
 		{
@@ -85,28 +77,29 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 	}
 
 	clusterComponent := cyclonedx.Component{
-		BOMRef:     id(kbom.Cluster),
+		BOMRef:     kbom.Cluster.BOMRef(),
 		Type:       cyclonedx.ComponentTypePlatform,
-		Name:       "cluster",
+		Name:       kbom.Cluster.BOMName(),
 		Version:    kbom.Cluster.K8sVersion,
 		Properties: &clusterProperties,
 	}
+	cdxBOM.Metadata.Component = &clusterComponent
 
-	components = append(components, clusterComponent)
-
+	clusterDependencies := make(map[string]string)
 	for i := range kbom.Cluster.Nodes {
 		n := kbom.Cluster.Nodes[i]
+		bomRef := id(n)
 		components = append(components, cyclonedx.Component{
-			BOMRef: id(n),
+			BOMRef: bomRef,
 			Type:   cyclonedx.ComponentTypePlatform,
 			Name:   n.Name,
 			Properties: &[]cyclonedx.Property{
 				{
-					Name:  CdxPrefix + "k8s:component:type",
+					Name:  CdxPrefix + K8sComponentType,
 					Value: NodeType,
 				},
 				{
-					Name:  CdxPrefix + "k8s:component:name",
+					Name:  CdxPrefix + K8sComponentName,
 					Value: n.Name,
 				},
 				{
@@ -187,22 +180,24 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 				},
 			},
 		})
+		clusterDependencies[bomRef] = bomRef
 	}
 
 	for _, img := range kbom.Cluster.Components.Images {
+		bomRef := img.PkgID()
 		container := cyclonedx.Component{
-			BOMRef:     img.PkgID(),
+			BOMRef:     bomRef,
 			Type:       cyclonedx.ComponentTypeContainer,
 			Name:       img.Name,
 			Version:    img.Digest,
-			PackageURL: img.PkgID(),
+			PackageURL: bomRef,
 			Properties: &[]cyclonedx.Property{
 				{
-					Name:  CdxPrefix + "k8s:component:type",
+					Name:  CdxPrefix + K8sComponentType,
 					Value: ContainerType,
 				},
 				{
-					Name:  CdxPrefix + "k8s:component:name",
+					Name:  CdxPrefix + K8sComponentName,
 					Value: img.Name,
 				},
 				{
@@ -225,17 +220,21 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 		}
 
 		components = append(components, container)
+
+		if img.ControlPlane {
+			clusterDependencies[bomRef] = bomRef
+		}
 	}
 
 	for _, resList := range kbom.Cluster.Components.Resources {
 		for _, res := range resList.Resources {
 			properties := []cyclonedx.Property{
 				{
-					Name:  CdxPrefix + "k8s:component:type",
+					Name:  CdxPrefix + K8sComponentType,
 					Value: resList.Kind,
 				},
 				{
-					Name:  CdxPrefix + "k8s:component:name",
+					Name:  CdxPrefix + K8sComponentName,
 					Value: res.Name,
 				},
 				{
@@ -263,9 +262,21 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 		}
 	}
 
-	cdxBOM.Components = &components
+	clusterDependenciesArr := make([]string, 0)
+	for _, dep := range clusterDependencies {
+		clusterDependenciesArr = append(clusterDependenciesArr, dep)
+	}
+	slices.Sort(clusterDependenciesArr)
 
-	// TODO: add relationships and dependencies
+	dependencies = append(dependencies,
+		cyclonedx.Dependency{
+			Ref:          clusterComponent.BOMRef,
+			Dependencies: &clusterDependenciesArr,
+		},
+	)
+
+	cdxBOM.Components = &components
+	cdxBOM.Dependencies = &dependencies
 
 	return cdxBOM
 }
