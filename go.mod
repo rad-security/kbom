@@ -3,7 +3,7 @@ module github.com/ksoclabs/kbom
 go 1.21
 
 require (
-	github.com/CycloneDX/cyclonedx-go v0.7.2
+	github.com/CycloneDX/cyclonedx-go v0.8.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/distribution/reference v0.5.0
 	github.com/google/uuid v1.5.0
