@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/CycloneDX/cyclonedx-go v0.7.2
 	github.com/Masterminds/semver v1.5.0
-	github.com/distribution/reference v0.5.0
+	github.com/distribution/reference v0.6.0
 	github.com/google/uuid v1.5.0
 	github.com/invopop/jsonschema v0.12.0
 	github.com/mitchellh/hashstructure/v2 v2.0.2
