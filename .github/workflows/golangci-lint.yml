@@ -21,7 +21,7 @@ jobs:
           cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.7.0
+        uses: golangci/golangci-lint-action@v6.0.1
         with:
           version: v1.54.2
           args: --timeout=5m
