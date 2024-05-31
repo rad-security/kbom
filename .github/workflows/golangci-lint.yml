@@ -16,12 +16,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.22'
           check-latest: true # https://github.com/actions/setup-go#check-latest-version
           cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.7.0
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.54.2
+          version: v1.59.0
           args: --timeout=5m
