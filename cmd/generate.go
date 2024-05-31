@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	KSOCCompany = "KSOC Labs"
-	BOMFormat   = "ksoc"
-	SpecVersion = "0.2"
+	KSOCCompany = "RAD Security"
+	BOMFormat   = "rad"
+	SpecVersion = "0.3"
 
 	StdOutput  = "stdout"
 	FileOutput = "file"

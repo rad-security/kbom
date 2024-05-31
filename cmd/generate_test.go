@@ -348,11 +348,11 @@ var mockCACert = "1234567890"
 
 var expectedOutJSON = `{
   "id": "00000001",
-  "bom_format": "ksoc",
-  "spec_version": "0.2",
+  "bom_format": "rad",
+  "spec_version": "0.3",
   "generated_at": "2023-04-26T10:00:00Z",
   "generated_by": {
-    "vendor": "KSOC Labs",
+    "vendor": "RAD Security",
     "name": "unknown",
     "build_time": "unknown",
     "version": "unknown",
@@ -479,11 +479,11 @@ var expectedOutJSON = `{
 }
 `
 var expectedOutYAML = `id: "00000001"
-bomformat: ksoc
-specversion: "0.2"
+bomformat: rad
+specversion: "0.3"
 generatedat: 2023-04-26T10:00:00Z
 generatedby:
-  vendor: KSOC Labs
+  vendor: RAD Security
   name: unknown
   buildtime: unknown
   version: unknown
