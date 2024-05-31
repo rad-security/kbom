@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/term"
 
-	"github.com/ksoclabs/kbom/internal/utils"
+	"github.com/rad-security/kbom/internal/utils"
 )
 
 const (

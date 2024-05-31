@@ -31,7 +31,7 @@ func (m *stdoutMock) Close() error {
 
 var expectedSchema = `{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/ksoclabs/kbom/internal/model/kbom",
+  "$id": "https://github.com/rad-security/kbom/internal/model/kbom",
   "$ref": "#/$defs/KBOM",
   "$defs": {
     "Capacity": {

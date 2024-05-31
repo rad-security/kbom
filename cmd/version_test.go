@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/ksoclabs/kbom/internal/config"
+	"github.com/rad-security/kbom/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,5 +27,5 @@ var expectedVersion = `kbom version 1.0.0
 build date: 2021-01-01T00:00:00Z
 commit: 1234567890
 
-https://github.com/ksoclabs/kbom
+https://github.com/rad-security/kbom
 `

@@ -1,6 +1,6 @@
 # Contributing
 
-KBOM is [Apache 2.0 licensed](https://github.com/ksoclabs/kbom/blob/main/LICENSE) and
+KBOM is [Apache 2.0 licensed](https://github.com/rad-security/kbom/blob/main/LICENSE) and
 accepts contributions via GitHub pull requests. This document outlines
 some of the conventions on to make it easier to get your contribution
 accepted.
@@ -28,7 +28,7 @@ you can sign your commit automatically with `git commit -s`.
 
 ## Communications
 
-To discuss ideas and specifications we use [GitHub Discussions](https://github.com/ksoclabs/kbom/discussions).
+To discuss ideas and specifications we use [GitHub Discussions](https://github.com/rad-security/kbom/discussions).
 
 ## How to run the KBOM generator in local environment
 

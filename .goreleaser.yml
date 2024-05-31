@@ -11,7 +11,7 @@ release:
     - glob: ./bom.json
   github:
     name: kbom
-    owner: ksoclabs
+    owner: rad-security
   discussion_category_name: Announcements
 
 builds:
@@ -21,15 +21,15 @@ builds:
       - linux
       - windows
     goarch:
-      - 386
+      - "386"
       - amd64
       - arm
       - arm64
     goarm:
-      - 7
+      - "7"
     ignore:
       - goos: darwin
-        goarch: 386
+        goarch: "386"
     ldflags:
       - -X "{{.Env.CFG_PACKAGE_NAME}}.AppName=kbom"
       - -X "{{.Env.CFG_PACKAGE_NAME}}.AppVersion={{.Env.VERSION}}"
@@ -72,9 +72,9 @@ signs:
 
 brews:
   - repository:
-      owner: ksoclabs
+      owner: rad-security
       name: homebrew-kbom
-    homepage: "https://github.com/ksoclabs/kbom"
+    homepage: "https://github.com/rad-security/kbom"
     description: "The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry."
     license: "Apache 2"
     test: |

@@ -15,10 +15,10 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/ksoclabs/kbom/internal/config"
-	"github.com/ksoclabs/kbom/internal/kube"
-	"github.com/ksoclabs/kbom/internal/model"
-	"github.com/ksoclabs/kbom/internal/utils"
+	"github.com/rad-security/kbom/internal/config"
+	"github.com/rad-security/kbom/internal/kube"
+	"github.com/rad-security/kbom/internal/model"
+	"github.com/rad-security/kbom/internal/utils"
 )
 
 const (

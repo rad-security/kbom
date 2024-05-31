@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/invopop/jsonschema"
-	"github.com/ksoclabs/kbom/internal/model"
+	"github.com/rad-security/kbom/internal/model"
 	"github.com/spf13/cobra"
 )
 

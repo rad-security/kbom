@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ksoclabs/kbom/internal/kube"
-	"github.com/ksoclabs/kbom/internal/model"
+	"github.com/rad-security/kbom/internal/kube"
+	"github.com/rad-security/kbom/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 

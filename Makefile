@@ -1,6 +1,6 @@
 APP_NAME := kbom
 GCR_ORG := ksoc-public
-GITHUB_ORG := ksoclabs
+GITHUB_ORG := rad-security
 GIT_REPO ?= github.com/$(GITHUB_ORG)/$(APP_NAME)
 VERSION := $(shell SEP="-" bash scripts/version)
 
