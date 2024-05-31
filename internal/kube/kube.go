@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/ksoclabs/kbom/internal/model"
+	"github.com/rad-security/kbom/internal/model"
 )
 
 type K8sClient interface {

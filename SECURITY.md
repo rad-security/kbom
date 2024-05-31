@@ -8,4 +8,4 @@ For example if there is a vulnerability in release `v0.1.0` we will fix that rel
 
 ## Reporting a Vulnerability
 
-If you are aware of a vulnverability please feel free to disclose it responsibly [here](https://github.com/ksoclabs/kbom/security/advisories/new).
+If you are aware of a vulnverability please feel free to disclose it responsibly [here](https://github.com/rad-security/kbom/security/advisories/new).

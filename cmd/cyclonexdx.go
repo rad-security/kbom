@@ -8,8 +8,8 @@ import (
 
 	"github.com/CycloneDX/cyclonedx-go"
 	"github.com/google/uuid"
-	"github.com/ksoclabs/kbom/internal/model"
 	"github.com/mitchellh/hashstructure/v2"
+	"github.com/rad-security/kbom/internal/model"
 )
 
 const (

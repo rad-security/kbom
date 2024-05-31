@@ -1,8 +1,8 @@
 # KBOM - Kubernetes Bill of Materials
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/ksoclabs/kbom)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/rad-security/kbom)
 ![Hex.pm](https://img.shields.io/hexpm/l/apa)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ksoclabs/kbom)](https://goreportcard.com/report/github.com/ksoclabs/kbom)
+[![Go Report Card](https://goreportcard.com/badge/github.com/rad-security/kbom)](https://goreportcard.com/report/github.com/rad-security/kbom)
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/7273/badge)](https://bestpractices.coreinfrastructure.org/projects/7273)
 
 The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry.
@@ -16,7 +16,7 @@ The KBOM project provides an initial specification in JSON and has been construc
 ### Installation
 
 ```sh
-brew install ksoclabs/homebrew-kbom/kbom
+brew install rad-security/homebrew-kbom/kbom
 ```
 
 or
