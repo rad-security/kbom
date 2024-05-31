@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	confDir = ".config/ksoc"
+	confDir = ".config/rad"
 )
 
 var (

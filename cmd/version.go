@@ -3,8 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/rad-security/kbom/internal/config"
 	"github.com/spf13/cobra"
+
+	"github.com/rad-security/kbom/internal/config"
 )
 
 var versionCmd = &cobra.Command{

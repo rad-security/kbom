@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/rad-security/kbom/internal/config"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/rad-security/kbom/internal/config"
 )
 
 func TestVersion(t *testing.T) {

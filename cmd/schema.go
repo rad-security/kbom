@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 
 	"github.com/invopop/jsonschema"
-	"github.com/rad-security/kbom/internal/model"
 	"github.com/spf13/cobra"
+
+	"github.com/rad-security/kbom/internal/model"
 )
 
 var schemaCmd = &cobra.Command{
