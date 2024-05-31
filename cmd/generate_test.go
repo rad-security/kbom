@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/rad-security/kbom/internal/kube"
 	"github.com/rad-security/kbom/internal/model"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerateKBOM(t *testing.T) {

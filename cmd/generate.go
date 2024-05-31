@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	KSOCCompany = "RAD Security"
+	Company     = "RAD Security"
 	BOMFormat   = "rad"
 	SpecVersion = "0.3"
 
@@ -108,7 +108,7 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 		SpecVersion: SpecVersion,
 		GeneratedAt: generatedAt,
 		GeneratedBy: model.Tool{
-			Vendor:     KSOCCompany,
+			Vendor:     Company,
 			BuildTime:  config.BuildTime,
 			Name:       config.AppName,
 			Version:    config.AppVersion,

@@ -9,12 +9,13 @@ import (
 	"github.com/CycloneDX/cyclonedx-go"
 	"github.com/google/uuid"
 	"github.com/mitchellh/hashstructure/v2"
+
 	"github.com/rad-security/kbom/internal/model"
 )
 
 const (
 	CdxPrefix        = "cdx:"
-	KSOCPrefix       = "ksoc:kbom:"
+	RADPrefix        = "rad:kbom:"
 	K8sComponentType = "k8s:component:type"
 	K8sComponentName = "k8s:component:name"
 
@@ -50,28 +51,28 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 			Value: kbom.Cluster.Name,
 		},
 		{
-			Name:  KSOCPrefix + "k8s:cluster:nodes",
+			Name:  RADPrefix + "k8s:cluster:nodes",
 			Value: fmt.Sprintf("%d", kbom.Cluster.NodesCount),
 		},
 	}
 
 	if kbom.Cluster.Location.Name != "" && kbom.Cluster.Location.Name != "unknown" {
 		clusterProperties = append(clusterProperties, cyclonedx.Property{
-			Name:  KSOCPrefix + "k8s:cluster:location:name",
+			Name:  RADPrefix + "k8s:cluster:location:name",
 			Value: kbom.Cluster.Location.Name,
 		})
 	}
 
 	if kbom.Cluster.Location.Region != "" {
 		clusterProperties = append(clusterProperties, cyclonedx.Property{
-			Name:  KSOCPrefix + "k8s:cluster:location:region",
+			Name:  RADPrefix + "k8s:cluster:location:region",
 			Value: kbom.Cluster.Location.Region,
 		})
 	}
 
 	if kbom.Cluster.Location.Zone != "" {
 		clusterProperties = append(clusterProperties, cyclonedx.Property{
-			Name:  KSOCPrefix + "k8s:cluster:location:zone",
+			Name:  RADPrefix + "k8s:cluster:location:zone",
 			Value: kbom.Cluster.Location.Zone,
 		})
 	}
@@ -103,79 +104,79 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Value: n.Name,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:osImage",
+					Name:  RADPrefix + "k8s:node:osImage",
 					Value: n.OsImage,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:arch",
+					Name:  RADPrefix + "k8s:node:arch",
 					Value: n.Architecture,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:kernel",
+					Name:  RADPrefix + "k8s:node:kernel",
 					Value: n.KernelVersion,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:bootId",
+					Name:  RADPrefix + "k8s:node:bootId",
 					Value: n.BootID,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:type",
+					Name:  RADPrefix + "k8s:node:type",
 					Value: n.Type,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:operatingSystem",
+					Name:  RADPrefix + "k8s:node:operatingSystem",
 					Value: n.OperatingSystem,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:machineId",
+					Name:  RADPrefix + "k8s:node:machineId",
 					Value: n.MachineID,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:hostname",
+					Name:  RADPrefix + "k8s:node:hostname",
 					Value: n.Hostname,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:containerRuntimeVersion",
+					Name:  RADPrefix + "k8s:node:containerRuntimeVersion",
 					Value: n.ContainerRuntimeVersion,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:kubeletVersion",
+					Name:  RADPrefix + "k8s:node:kubeletVersion",
 					Value: n.KubeletVersion,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:kubeProxyVersion",
+					Name:  RADPrefix + "k8s:node:kubeProxyVersion",
 					Value: n.KubeProxyVersion,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:capacity:cpu",
+					Name:  RADPrefix + "k8s:node:capacity:cpu",
 					Value: n.Capacity.CPU,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:capacity:memory",
+					Name:  RADPrefix + "k8s:node:capacity:memory",
 					Value: n.Capacity.Memory,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:capacity:pods",
+					Name:  RADPrefix + "k8s:node:capacity:pods",
 					Value: n.Capacity.Pods,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:capacity:ephemeralStorage",
+					Name:  RADPrefix + "k8s:node:capacity:ephemeralStorage",
 					Value: n.Capacity.EphemeralStorage,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:allocatable:cpu",
+					Name:  RADPrefix + "k8s:node:allocatable:cpu",
 					Value: n.Allocatable.CPU,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:allocatable:memory",
+					Name:  RADPrefix + "k8s:node:allocatable:memory",
 					Value: n.Allocatable.Memory,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:allocatable:pods",
+					Name:  RADPrefix + "k8s:node:allocatable:pods",
 					Value: n.Allocatable.Pods,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:node:allocatable:ephemeralStorage",
+					Name:  RADPrefix + "k8s:node:allocatable:ephemeralStorage",
 					Value: n.Allocatable.EphemeralStorage,
 				},
 			},
@@ -201,19 +202,19 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Value: img.Name,
 				},
 				{
-					Name:  KSOCPrefix + "pkg:type",
+					Name:  RADPrefix + "pkg:type",
 					Value: "oci",
 				},
 				{
-					Name:  KSOCPrefix + "pkg:name",
+					Name:  RADPrefix + "pkg:name",
 					Value: img.Name,
 				},
 				{
-					Name:  KSOCPrefix + "pkg:version",
+					Name:  RADPrefix + "pkg:version",
 					Value: img.Version,
 				},
 				{
-					Name:  KSOCPrefix + "pkg:digest",
+					Name:  RADPrefix + "pkg:digest",
 					Value: img.Digest,
 				},
 			},
@@ -238,14 +239,14 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Value: res.Name,
 				},
 				{
-					Name:  KSOCPrefix + "k8s:component:apiVersion",
+					Name:  RADPrefix + "k8s:component:apiVersion",
 					Value: resList.APIVersion,
 				},
 			}
 
 			if resList.Namespaced {
 				properties = append(properties, cyclonedx.Property{
-					Name:  KSOCPrefix + "k8s:component:namespace",
+					Name:  RADPrefix + "k8s:component:namespace",
 					Value: res.Namespace,
 				})
 			}

@@ -22,7 +22,7 @@ linters-settings:
   gocyclo:
     min-complexity: 15
   goimports:
-    local-prefixes: github.com/ksoc-private
+    local-prefixes: github.com/rad-security
   golint:
     min-confidence: 0
   lll:
