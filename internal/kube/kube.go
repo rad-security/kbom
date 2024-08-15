@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/golang-collections/collections/set"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"os"
 	"strings"
 
@@ -26,9 +28,9 @@ type K8sClient interface {
 	ClusterName(ctx context.Context) (string, error)
 	Metadata(ctx context.Context) (string, string, error)
 	Location(ctx context.Context) (*model.Location, error)
-	AllImages(ctx context.Context) ([]model.Image, error)
+	AllImages(ctx context.Context, nsFilter *set.Set) ([]model.Image, error)
 	AllNodes(ctx context.Context, full bool) ([]model.Node, error)
-	AllResources(ctx context.Context, full bool) (map[string]model.ResourceList, error)
+	AllResources(ctx context.Context, full bool, namespaces []string, targetKind *set.Set) (map[string]model.ResourceList, error)
 }
 
 func NewClient(k8sContext string) (K8sClient, error) {
@@ -161,19 +163,24 @@ func (k *k8sDB) AllNodes(ctx context.Context, full bool) ([]model.Node, error) {
 	return modelNodes, nil
 }
 
-func (k *k8sDB) AllImages(ctx context.Context) ([]model.Image, error) {
+func (k *k8sDB) AllImages(ctx context.Context, nsFilter *set.Set) ([]model.Image, error) {
 	namespaces, err := k.client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list namespaces: %v", err)
 	}
-
+	useNamespaceFilter := nsFilter.Len() != 0
 	images := make(map[string]model.Image)
 	for i := range namespaces.Items {
+		namespace := namespaces.Items[i].Name
+		if useNamespaceFilter && !nsFilter.Has(strings.ToLower(namespace)) {
+			//don't include resources in KBOM if filtering is enabled and the resource namespace is not in the filter
+			continue
+		}
+
 		pods, err := k.client.CoreV1().Pods(namespaces.Items[i].Name).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to list pods: %w", err)
 		}
-		namespace := namespaces.Items[i].Name
 
 		log.Debug().Str("namespace", namespace).Int("count", len(pods.Items)).Msg("Found pods in namespace")
 
@@ -237,6 +244,7 @@ func containerToImage(img, imgName string, statuses []v1.ContainerStatus, namesp
 	res := &model.Image{
 		FullName:     img,
 		ControlPlane: controlPlane,
+		Namespace:    namespace,
 	}
 
 	res.Name = named.Name()
@@ -304,17 +312,23 @@ func (k *k8sDB) Metadata(ctx context.Context) (k8sVersion, caDigest string, err 
 	return ver, caDigest, nil
 }
 
-func (k *k8sDB) AllResources(ctx context.Context, full bool) (map[string]model.ResourceList, error) {
+func (k *k8sDB) AllResources(ctx context.Context, full bool, namespaceFilter []string, targetKind *set.Set) (map[string]model.ResourceList, error) {
 	apiResourceList, err := k.client.Discovery().ServerPreferredResources()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get api groups: %w", err)
 	}
+
+	apiResourceList = filterResourcesByKind(apiResourceList, targetKind)
 
 	resourceMap := make(map[string]model.ResourceList)
 	for _, apiResource := range apiResourceList {
 		gv, err := schema.ParseGroupVersion(apiResource.GroupVersion)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse group version: %w", err)
+		}
+
+		var resourceList = &unstructured.UnstructuredList{
+			Items: []unstructured.Unstructured{},
 		}
 
 		for i := range apiResource.APIResources {
@@ -325,17 +339,27 @@ func (k *k8sDB) AllResources(ctx context.Context, full bool) (map[string]model.R
 				Resource: res.Name,
 			}
 
-			resourceList, err := k.dynamicClient.Resource(gvr).List(ctx, metav1.ListOptions{})
-			if err != nil {
-				log.Debug().Err(err).Interface("gvr", gvr).Msg("Failed to list resources")
-				continue
+			if namespaceFilter == nil || len(namespaceFilter) == 0 {
+				resourceList, err = k.dynamicClient.Resource(gvr).List(ctx, metav1.ListOptions{})
+				if err != nil {
+					log.Debug().Err(err).Interface("gvr", gvr).Msg("Failed to list resources")
+					continue
+				}
+			} else {
+				for _, namespace := range namespaceFilter {
+					resources, err := k.dynamicClient.Resource(gvr).Namespace(namespace).List(ctx, metav1.ListOptions{})
+					if err != nil {
+						log.Debug().Err(err).Interface("gvr", gvr).Msg(fmt.Sprintf("Failed to list resources in namespace %s", namespace))
+						continue
+					}
+					resourceList.Items = append(resourceList.Items, resources.Items...)
+				}
 			}
-
 			log.Debug().Interface("gvr", gvr).Int("count", len(resourceList.Items)).Msg("Found resources")
 
 			if len(resourceList.Items) > 0 {
 				resourceMap[gvr.String()] = model.ResourceList{
-					Kind:           resourceList.Items[0].GetKind(),
+					Kind:           res.Kind,
 					APIVersion:     gvr.GroupVersion().String(),
 					Namespaced:     res.Namespaced,
 					ResourcesCount: len(resourceList.Items),
@@ -389,4 +413,30 @@ func getCloudName(labels map[string]string) string {
 	}
 
 	return "unknown"
+}
+
+func filterResourcesByKind(apiResourceList []*metav1.APIResourceList, kind *set.Set) []*metav1.APIResourceList {
+	var filteredResourceList []*metav1.APIResourceList
+
+	for _, apiResource := range apiResourceList {
+		var filteredAPIResources []metav1.APIResource
+		if kind != nil {
+			for _, resource := range apiResource.APIResources {
+				if kind.Has(strings.ToLower(resource.Kind)) {
+					filteredAPIResources = append(filteredAPIResources, resource)
+				}
+			}
+		} else {
+			filteredAPIResources = append(filteredAPIResources, apiResource.APIResources...)
+		}
+
+		if len(filteredAPIResources) > 0 {
+			filteredResourceList = append(filteredResourceList, &metav1.APIResourceList{
+				GroupVersion: apiResource.GroupVersion,
+				APIResources: filteredAPIResources,
+			})
+		}
+	}
+
+	return filteredResourceList
 }

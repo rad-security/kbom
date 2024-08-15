@@ -14,6 +14,11 @@ const (
 	kubernetesPkgName = "k8s.io/kubernetes"
 )
 
+type Filters struct {
+	Namespace []string `json:"namespaces"`
+	Resources []string `json:"resources"`
+}
+
 type KBOM struct {
 	ID          string    `json:"id"`
 	BOMFormat   string    `json:"bom_format"`
@@ -103,6 +108,7 @@ type Image struct {
 	Version      string `json:"version"`
 	Digest       string `json:"digest"`
 	ControlPlane bool   `json:"-"`
+	Namespace    string `json:"namespace"`
 }
 
 func (i *Image) PkgID() string {

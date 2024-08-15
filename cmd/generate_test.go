@@ -3,7 +3,10 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/golang-collections/collections/set"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"os"
 	"testing"
 	"time"
@@ -24,8 +27,10 @@ func TestGenerateKBOM(t *testing.T) {
 		timeMock   string
 
 		// flags
-		output string
-		format string
+		output    string
+		format    Format
+		namespace string
+		resource  string
 
 		expectedOut string
 		expectedErr error
@@ -62,7 +67,7 @@ func TestGenerateKBOM(t *testing.T) {
 		{
 			name: "all resources error",
 			clientMock: &mockedK8sClient{
-				allResources: func(context.Context, bool) (map[string]model.ResourceList, error) {
+				allResources: func(context.Context, bool, []string, *set.Set) (map[string]model.ResourceList, error) {
 					return nil, fmt.Errorf("all resources error")
 				},
 			},
@@ -71,7 +76,7 @@ func TestGenerateKBOM(t *testing.T) {
 		{
 			name: "all images error",
 			clientMock: &mockedK8sClient{
-				allImages: func(context.Context) ([]model.Image, error) {
+				allImages: func(context.Context, *set.Set) ([]model.Image, error) {
 					return nil, fmt.Errorf("all images error")
 				},
 			},
@@ -82,7 +87,7 @@ func TestGenerateKBOM(t *testing.T) {
 			clientMock:  &mockedK8sClient{},
 			timeMock:    "2023-04-26T10:00:00.000000+00:00",
 			idMock:      "00000001",
-			format:      "wrong",
+			format:      Format{Name: "wrong"},
 			expectedErr: fmt.Errorf("format \"wrong\" is not supported"),
 		},
 		{
@@ -185,23 +190,25 @@ func TestGenerateKBOM(t *testing.T) {
 						},
 					}, nil
 				},
-				allImages: func(context.Context) ([]model.Image, error) {
+				allImages: func(context.Context, *set.Set) ([]model.Image, error) {
 					return []model.Image{
 						{
-							Name:     "nginx",
-							Version:  "1.17.1",
-							FullName: "nginx:1.17.1",
-							Digest:   "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+							Name:      "nginx",
+							Version:   "1.17.1",
+							FullName:  "nginx:1.17.1",
+							Digest:    "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+							Namespace: "",
 						},
 						{
-							Name:     "redis",
-							Version:  "7.0.1",
-							FullName: "redis:7.0.1",
-							Digest:   "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+							Name:      "redis",
+							Version:   "7.0.1",
+							FullName:  "redis:7.0.1",
+							Digest:    "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+							Namespace: "",
 						},
 					}, nil
 				},
-				allResources: func(context.Context, bool) (map[string]model.ResourceList, error) {
+				allResources: func(context.Context, bool, []string, *set.Set) (map[string]model.ResourceList, error) {
 					return map[string]model.ResourceList{
 						"/v1, Resource=namespaces": {
 							Kind:           "Namespace",
@@ -230,7 +237,7 @@ func TestGenerateKBOM(t *testing.T) {
 			clientMock:  &mockedK8sClient{},
 			timeMock:    "2023-04-26T10:00:00.000000+00:00",
 			idMock:      "00000001",
-			format:      YAMLFormat.Name,
+			format:      YAMLFormat,
 			expectedOut: expectedOutYAML,
 		},
 		{
@@ -238,9 +245,147 @@ func TestGenerateKBOM(t *testing.T) {
 			clientMock:  &mockedK8sClient{},
 			timeMock:    "2023-04-26T10:00:00.000000+00:00",
 			idMock:      "00000001",
-			format:      YAMLFormat.Name,
+			format:      YAMLFormat,
 			output:      FileOutput,
 			expectedOut: expectedOutYAML,
+		},
+		{
+			name: "print full KBOM with filters - stdout - json",
+			clientMock: &mockedK8sClient{
+				clusterName: func(context.Context) (string, error) {
+					return "test-cluster", nil
+				},
+				metadata: func(context.Context) (string, string, error) {
+					return "012345678", "1.25.1", nil
+				},
+				location: func(context.Context) (*model.Location, error) {
+					return &model.Location{
+						Name:   "aws",
+						Region: "us-east-1",
+						Zone:   "us-east-1a",
+					}, nil
+				},
+				allNodes: func(context.Context, bool) ([]model.Node, error) {
+					return []model.Node{
+						{
+							Name:     "ip-10-0-65-00.us-east-1.compute.internal",
+							Type:     "t3.small",
+							Hostname: "ip-10-0-65-00.us-east-1.compute.internal",
+							Capacity: &model.Capacity{
+								CPU:              "2",
+								Memory:           "1970512Ki",
+								Pods:             "11",
+								EphemeralStorage: "524275692Ki",
+							},
+							Allocatable: &model.Capacity{
+								CPU:              "1930m",
+								Memory:           "1483088Ki",
+								Pods:             "11",
+								EphemeralStorage: "482098735124",
+							},
+							Labels: map[string]string{
+								"beta.kubernetes.io/arch":          "amd64",
+								"beta.kubernetes.io/instance-type": "t3.small",
+								"beta.kubernetes.io/os":            "linux",
+								"topology.kubernetes.io/region":    "us-west-2",
+								"topology.kubernetes.io/zone":      "us-west-2a",
+							},
+							Annotations: map[string]string{
+								"node.alpha.kubernetes.io/ttl": "0",
+							},
+							MachineID:               "00001",
+							Architecture:            "amd64",
+							ContainerRuntimeVersion: "containerd://1.6.8+bottlerocket",
+							BootID:                  "00001",
+							KernelVersion:           "5.15.59",
+							KubeProxyVersion:        "v1.24.6",
+							KubeletVersion:          "v1.24.6",
+							OperatingSystem:         "linux",
+							OsImage:                 "Bottlerocket OS 1.11.1 (aws-k8s-1.24)",
+						},
+						{
+							Name:     "ip-10-0-65-01.us-east-1.compute.internal",
+							Type:     "t3.small",
+							Hostname: "ip-10-0-65-01.us-east-1.compute.internal",
+							Capacity: &model.Capacity{
+								CPU:              "2",
+								Memory:           "1970512Ki",
+								Pods:             "11",
+								EphemeralStorage: "524275692Ki",
+							},
+							Allocatable: &model.Capacity{
+								CPU:              "1930m",
+								Memory:           "1483088Ki",
+								Pods:             "11",
+								EphemeralStorage: "482098735124",
+							},
+							Labels: map[string]string{
+								"beta.kubernetes.io/arch":          "amd64",
+								"beta.kubernetes.io/instance-type": "t3.small",
+								"beta.kubernetes.io/os":            "linux",
+								"topology.kubernetes.io/region":    "us-west-2",
+								"topology.kubernetes.io/zone":      "us-west-2a",
+							},
+							Annotations: map[string]string{
+								"node.alpha.kubernetes.io/ttl": "0",
+							},
+							MachineID:               "00002",
+							Architecture:            "amd64",
+							ContainerRuntimeVersion: "containerd://1.6.8+bottlerocket",
+							BootID:                  "00002",
+							KernelVersion:           "5.15.59",
+							KubeProxyVersion:        "v1.24.6",
+							KubeletVersion:          "v1.24.6",
+							OperatingSystem:         "linux",
+							OsImage:                 "Bottlerocket OS 1.11.1 (aws-k8s-1.24)",
+						},
+					}, nil
+				},
+				allImages: func(context.Context, *set.Set) ([]model.Image, error) {
+					return []model.Image{
+						{
+							Name:      "nginx",
+							Version:   "1.17.1",
+							FullName:  "nginx:1.17.1",
+							Digest:    "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+							Namespace: "default",
+						},
+						{
+							Name:      "redis",
+							Version:   "7.0.1",
+							FullName:  "redis:7.0.1",
+							Digest:    "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+							Namespace: "test-namespace",
+						},
+					}, nil
+				},
+				allResources: func(context.Context, bool, []string, *set.Set) (map[string]model.ResourceList, error) {
+					return map[string]model.ResourceList{
+						"/v1, Resource=namespaces": {
+							Kind:           "Namespace",
+							APIVersion:     "v1",
+							Namespaced:     false,
+							ResourcesCount: 2,
+							Resources: []model.Resource{
+								{
+									Name: "backend",
+								},
+								{
+									Name: "frontend",
+								},
+							},
+						},
+					}, nil
+				},
+			},
+			timeMock:    "2023-04-26T10:00:00.000000+00:00",
+			idMock:      mockCACert,
+			format:      CycloneDXJsonFormat,
+			output:      FileOutput,
+			expectedErr: nil,
+			namespace:   "default,test-namespace",
+			resource:    "Namespace",
+			expectedOut: expectedOutWithFilterJSON,
 		},
 	}
 
@@ -255,8 +400,8 @@ func TestGenerateKBOM(t *testing.T) {
 				generatedAt = mockedTime
 			}
 
-			if tc.format != "" {
-				format = tc.format
+			if tc.format.Name != "" {
+				format = tc.format.Name
 			} else {
 				format = JSONFormat.Name
 			}
@@ -275,7 +420,7 @@ func TestGenerateKBOM(t *testing.T) {
 			}
 
 			if output == FileOutput {
-				filename := fmt.Sprintf("kbom-%s-2023-04-26-10-00-00.%s", mockCACert[:8], format)
+				filename := fmt.Sprintf("kbom-%s-2023-04-26-10-00-00.%s", mockCACert[:8], tc.format.FileExtension)
 				assert.FileExists(t, filename)
 				file, err := os.Open(filename)
 				assert.NoError(t, err)
@@ -285,11 +430,27 @@ func TestGenerateKBOM(t *testing.T) {
 				assert.NoError(t, err)
 				file.Close()
 
-				assert.Equal(t, tc.expectedOut, buf.String())
+				var tcResult string
+				if tc.format.Name == CycloneDXJsonFormat.Name {
+					var jsonMap unstructured.Unstructured
+					json.Unmarshal(buf.Bytes(), &jsonMap)
+
+					delete(jsonMap.Object, "serialNumber")
+					delete(jsonMap.Object["metadata"].(map[string]interface{}), "timestamp")
+
+					tcBytes, err := json.Marshal(jsonMap.Object)
+					assert.NoError(t, err)
+					tcResult = string(tcBytes)
+				} else {
+					tcResult = buf.String()
+				}
+
+				assert.Equal(t, tc.expectedOut, tcResult)
 				assert.NoError(t, os.Remove(filename))
 			} else {
 				assert.Equal(t, tc.expectedOut, mock.buf.String())
 			}
+
 		})
 	}
 }
@@ -298,9 +459,9 @@ type mockedK8sClient struct {
 	clusterName  func(context.Context) (string, error)
 	metadata     func(context.Context) (string, string, error)
 	location     func(context.Context) (*model.Location, error)
-	allImages    func(context.Context) ([]model.Image, error)
+	allImages    func(context.Context, *set.Set) ([]model.Image, error)
 	allNodes     func(context.Context, bool) ([]model.Node, error)
-	allResources func(context.Context, bool) (map[string]model.ResourceList, error)
+	allResources func(context.Context, bool, []string, *set.Set) (map[string]model.ResourceList, error)
 }
 
 func (m *mockedK8sClient) ClusterName(ctx context.Context) (clusterName string, err error) {
@@ -324,11 +485,11 @@ func (m *mockedK8sClient) Location(ctx context.Context) (*model.Location, error)
 	return m.location(ctx)
 }
 
-func (m *mockedK8sClient) AllImages(ctx context.Context) ([]model.Image, error) {
+func (m *mockedK8sClient) AllImages(ctx context.Context, nsFilter *set.Set) ([]model.Image, error) {
 	if m.allImages == nil {
 		return nil, nil
 	}
-	return m.allImages(ctx)
+	return m.allImages(ctx, nsFilter)
 }
 
 func (m *mockedK8sClient) AllNodes(ctx context.Context, full bool) ([]model.Node, error) {
@@ -338,14 +499,14 @@ func (m *mockedK8sClient) AllNodes(ctx context.Context, full bool) ([]model.Node
 	return m.allNodes(ctx, full)
 }
 
-func (m *mockedK8sClient) AllResources(ctx context.Context, full bool) (map[string]model.ResourceList, error) {
+func (m *mockedK8sClient) AllResources(ctx context.Context, full bool, ns []string, resources *set.Set) (map[string]model.ResourceList, error) {
 	if m.allResources == nil {
 		return nil, nil
 	}
-	return m.allResources(ctx, full)
+	return m.allResources(ctx, full, ns, resources)
 }
 
-var mockCACert = "1234567890"
+var mockCACert = "0000001234567890"
 
 var expectedOutJSON = `{
   "id": "00000001",
@@ -450,13 +611,15 @@ var expectedOutJSON = `{
           "full_name": "nginx:1.17.1",
           "name": "nginx",
           "version": "1.17.1",
-          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000001"
+          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+          "namespace": ""
         },
         {
           "full_name": "redis:7.0.1",
           "name": "redis",
           "version": "7.0.1",
-          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+          "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+          "namespace": ""
         }
       ],
       "resources": {
@@ -492,7 +655,7 @@ generatedby:
   committime: unknown
 cluster:
   name: test-cluster
-  cacertdigest: "1234567890"
+  cacertdigest: "0000001234567890"
   k8sversion: 1.25.1
   cniversion: ""
   location: null
@@ -502,3 +665,5 @@ cluster:
     images: []
     resources: {}
 `
+
+var expectedOutWithFilterJSON = `{"$schema":"http://cyclonedx.org/schema/bom-1.5.schema.json","bomFormat":"CycloneDX","components":[{"bom-ref":"9aa4600f959bdc45","name":"ip-10-0-65-00.us-east-1.compute.internal","properties":[{"name":"cdx:k8s:component:type","value":"node"},{"name":"cdx:k8s:component:name","value":"ip-10-0-65-00.us-east-1.compute.internal"},{"name":"rad:kbom:k8s:node:osImage","value":"Bottlerocket OS 1.11.1 (aws-k8s-1.24)"},{"name":"rad:kbom:k8s:node:arch","value":"amd64"},{"name":"rad:kbom:k8s:node:kernel","value":"5.15.59"},{"name":"rad:kbom:k8s:node:bootId","value":"00001"},{"name":"rad:kbom:k8s:node:type","value":"t3.small"},{"name":"rad:kbom:k8s:node:operatingSystem","value":"linux"},{"name":"rad:kbom:k8s:node:machineId","value":"00001"},{"name":"rad:kbom:k8s:node:hostname","value":"ip-10-0-65-00.us-east-1.compute.internal"},{"name":"rad:kbom:k8s:node:containerRuntimeVersion","value":"containerd://1.6.8+bottlerocket"},{"name":"rad:kbom:k8s:node:kubeletVersion","value":"v1.24.6"},{"name":"rad:kbom:k8s:node:kubeProxyVersion","value":"v1.24.6"},{"name":"rad:kbom:k8s:node:capacity:cpu","value":"2"},{"name":"rad:kbom:k8s:node:capacity:memory","value":"1970512Ki"},{"name":"rad:kbom:k8s:node:capacity:pods","value":"11"},{"name":"rad:kbom:k8s:node:capacity:ephemeralStorage","value":"524275692Ki"},{"name":"rad:kbom:k8s:node:allocatable:cpu","value":"1930m"},{"name":"rad:kbom:k8s:node:allocatable:memory","value":"1483088Ki"},{"name":"rad:kbom:k8s:node:allocatable:pods","value":"11"},{"name":"rad:kbom:k8s:node:allocatable:ephemeralStorage","value":"482098735124"}],"type":"platform"},{"bom-ref":"983443575e06efd0","name":"ip-10-0-65-01.us-east-1.compute.internal","properties":[{"name":"cdx:k8s:component:type","value":"node"},{"name":"cdx:k8s:component:name","value":"ip-10-0-65-01.us-east-1.compute.internal"},{"name":"rad:kbom:k8s:node:osImage","value":"Bottlerocket OS 1.11.1 (aws-k8s-1.24)"},{"name":"rad:kbom:k8s:node:arch","value":"amd64"},{"name":"rad:kbom:k8s:node:kernel","value":"5.15.59"},{"name":"rad:kbom:k8s:node:bootId","value":"00002"},{"name":"rad:kbom:k8s:node:type","value":"t3.small"},{"name":"rad:kbom:k8s:node:operatingSystem","value":"linux"},{"name":"rad:kbom:k8s:node:machineId","value":"00002"},{"name":"rad:kbom:k8s:node:hostname","value":"ip-10-0-65-01.us-east-1.compute.internal"},{"name":"rad:kbom:k8s:node:containerRuntimeVersion","value":"containerd://1.6.8+bottlerocket"},{"name":"rad:kbom:k8s:node:kubeletVersion","value":"v1.24.6"},{"name":"rad:kbom:k8s:node:kubeProxyVersion","value":"v1.24.6"},{"name":"rad:kbom:k8s:node:capacity:cpu","value":"2"},{"name":"rad:kbom:k8s:node:capacity:memory","value":"1970512Ki"},{"name":"rad:kbom:k8s:node:capacity:pods","value":"11"},{"name":"rad:kbom:k8s:node:capacity:ephemeralStorage","value":"524275692Ki"},{"name":"rad:kbom:k8s:node:allocatable:cpu","value":"1930m"},{"name":"rad:kbom:k8s:node:allocatable:memory","value":"1483088Ki"},{"name":"rad:kbom:k8s:node:allocatable:pods","value":"11"},{"name":"rad:kbom:k8s:node:allocatable:ephemeralStorage","value":"482098735124"}],"type":"platform"},{"bom-ref":"pkg:oci/nginx@sha256%3A0000000000000000000000000000000000000000000000000000000000000001?repository_url=nginx\u0026tag=1.17.1","name":"nginx","properties":[{"name":"cdx:k8s:component:type","value":"container"},{"name":"cdx:k8s:component:name","value":"nginx"},{"name":"rad:kbom:pkg:type","value":"oci"},{"name":"rad:kbom:pkg:name","value":"nginx"},{"name":"rad:kbom:pkg:version","value":"1.17.1"},{"name":"rad:kbom:pkg:digest","value":"sha256:0000000000000000000000000000000000000000000000000000000000000001"},{"name":"rad:kbom:pkg:namespace","value":"default"}],"purl":"pkg:oci/nginx@sha256%3A0000000000000000000000000000000000000000000000000000000000000001?repository_url=nginx\u0026tag=1.17.1","type":"container","version":"sha256:0000000000000000000000000000000000000000000000000000000000000001"},{"bom-ref":"pkg:oci/redis@sha256%3A0000000000000000000000000000000000000000000000000000000000000002?repository_url=redis\u0026tag=7.0.1","name":"redis","properties":[{"name":"cdx:k8s:component:type","value":"container"},{"name":"cdx:k8s:component:name","value":"redis"},{"name":"rad:kbom:pkg:type","value":"oci"},{"name":"rad:kbom:pkg:name","value":"redis"},{"name":"rad:kbom:pkg:version","value":"7.0.1"},{"name":"rad:kbom:pkg:digest","value":"sha256:0000000000000000000000000000000000000000000000000000000000000002"},{"name":"rad:kbom:pkg:namespace","value":"test-namespace"}],"purl":"pkg:oci/redis@sha256%3A0000000000000000000000000000000000000000000000000000000000000002?repository_url=redis\u0026tag=7.0.1","type":"container","version":"sha256:0000000000000000000000000000000000000000000000000000000000000002"},{"bom-ref":"dd8b4f55b0d933d3","name":"backend","properties":[{"name":"cdx:k8s:component:type","value":"Namespace"},{"name":"cdx:k8s:component:name","value":"backend"},{"name":"rad:kbom:k8s:component:apiVersion","value":"v1"}],"type":"application"},{"bom-ref":"1574622c94a2ffa2","name":"frontend","properties":[{"name":"cdx:k8s:component:type","value":"Namespace"},{"name":"cdx:k8s:component:name","value":"frontend"},{"name":"rad:kbom:k8s:component:apiVersion","value":"v1"}],"type":"application"}],"dependencies":[{"dependsOn":["983443575e06efd0","9aa4600f959bdc45"],"ref":"pkg:k8s/k8s.io%2Fkubernetes@012345678"}],"metadata":{"component":{"bom-ref":"pkg:k8s/k8s.io%2Fkubernetes@012345678","name":"k8s.io/kubernetes","properties":[{"name":"cdx:k8s:component:type","value":"cluster"},{"name":"cdx:k8s:component:name","value":"test-cluster"},{"name":"rad:kbom:k8s:cluster:nodes","value":"2"},{"name":"rad:kbom:k8s:cluster:location:name","value":"aws"},{"name":"rad:kbom:k8s:cluster:location:region","value":"us-east-1"},{"name":"rad:kbom:k8s:cluster:location:zone","value":"us-east-1a"}],"type":"platform","version":"012345678"},"tools":[{"name":"unknown","vendor":"RAD Security","version":"unknown"}]},"specVersion":"1.5","version":1}`

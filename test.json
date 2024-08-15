@@ -1,35 +1,4 @@
-package cmd
-
-import (
-	"bytes"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
-func TestRunGenerateSchema(t *testing.T) {
-	mock := &stdoutMock{buf: bytes.Buffer{}}
-	out = mock
-
-	err := runGenerateSchema(nil, []string{})
-	assert.NoError(t, err)
-
-	assert.Equal(t, expectedSchema, mock.buf.String())
-}
-
-type stdoutMock struct {
-	buf bytes.Buffer
-}
-
-func (m *stdoutMock) Write(p []byte) (n int, err error) {
-	return m.buf.Write(p)
-}
-
-func (m *stdoutMock) Close() error {
-	return nil
-}
-
-var expectedSchema = `{
+{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/rad-security/kbom/internal/model/kbom",
   "$ref": "#/$defs/KBOM",
@@ -134,9 +103,6 @@ var expectedSchema = `{
         },
         "digest": {
           "type": "string"
-        },
-        "namespace": {
-          "type": "string"
         }
       },
       "additionalProperties": false,
@@ -145,8 +111,7 @@ var expectedSchema = `{
         "full_name",
         "name",
         "version",
-        "digest",
-        "namespace"
+        "digest"
       ]
     },
     "KBOM": {
@@ -365,4 +330,3 @@ var expectedSchema = `{
     }
   }
 }
-`
