@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/rad-security/kbom/internal/utils"
 	"os"
 	"strings"
 
@@ -349,7 +350,9 @@ func (k *k8sDB) AllResources(ctx context.Context, full bool) (map[string]model.R
 						Name:      item.GetName(),
 						Namespace: item.GetNamespace(),
 					}
-
+					if version, ok := utils.GetVersion(item); ok {
+						res.AdditionalProperties = model.AdditionalProperties{Version: version}
+					}
 					val := resourceMap[gvr.String()]
 					val.Resources = append(val.Resources, res)
 					resourceMap[gvr.String()] = val

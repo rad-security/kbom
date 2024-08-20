@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -23,4 +24,20 @@ func BindFlags(cmd *cobra.Command) {
 			}
 		}
 	})
+}
+
+func GetVersion(item unstructured.Unstructured) (version string, ok bool) {
+
+	obj := item.Object
+	if obj == nil {
+		return "", false
+	}
+
+	spec, ok := obj["spec"].(map[string]interface{})
+	if !ok {
+		return "", false
+	}
+
+	version, ok = spec["version"].(string)
+	return
 }

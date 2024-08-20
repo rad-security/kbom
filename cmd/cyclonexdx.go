@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	CdxPrefix        = "cdx:"
-	RADPrefix        = "rad:kbom:"
-	K8sComponentType = "k8s:component:type"
-	K8sComponentName = "k8s:component:name"
+	CdxPrefix           = "cdx:"
+	RADPrefix           = "rad:kbom:"
+	K8sComponentType    = "k8s:component:type"
+	K8sComponentName    = "k8s:component:name"
+	K8sComponentVersion = "k8s:component:version"
 
 	ClusterType   = "cluster"
 	NodeType      = "node"
@@ -242,6 +243,13 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Name:  RADPrefix + "k8s:component:apiVersion",
 					Value: resList.APIVersion,
 				},
+			}
+
+			if res.AdditionalProperties.Version != "" {
+				properties = append(properties, cyclonedx.Property{
+					Name:  RADPrefix + K8sComponentVersion,
+					Value: res.AdditionalProperties.Version,
+				})
 			}
 
 			if resList.Namespaced {
