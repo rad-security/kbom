@@ -245,7 +245,7 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 				},
 			}
 
-			if res.AdditionalProperties.Version != "" {
+			if res.AdditionalProperties != nil && &res.AdditionalProperties.Version != nil {
 				properties = append(properties, cyclonedx.Property{
 					Name:  RADPrefix + K8sComponentVersion,
 					Value: res.AdditionalProperties.Version,

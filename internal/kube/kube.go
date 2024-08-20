@@ -347,11 +347,12 @@ func (k *k8sDB) AllResources(ctx context.Context, full bool) (map[string]model.R
 			if full {
 				for _, item := range resourceList.Items {
 					res := model.Resource{
-						Name:      item.GetName(),
-						Namespace: item.GetNamespace(),
+						Name:                 item.GetName(),
+						Namespace:            item.GetNamespace(),
+						AdditionalProperties: nil,
 					}
 					if version, ok := utils.GetVersion(item); ok {
-						res.AdditionalProperties = model.AdditionalProperties{Version: version}
+						res.AdditionalProperties = &model.AdditionalProperties{Version: version}
 					}
 					val := resourceMap[gvr.String()]
 					val.Resources = append(val.Resources, res)

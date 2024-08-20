@@ -34,6 +34,15 @@ var expectedSchema = `{
   "$id": "https://github.com/rad-security/kbom/internal/model/kbom",
   "$ref": "#/$defs/KBOM",
   "$defs": {
+    "AdditionalProperties": {
+      "properties": {
+        "spec.version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "Capacity": {
       "properties": {
         "cpu": {
@@ -289,6 +298,9 @@ var expectedSchema = `{
         },
         "namespace": {
           "type": "string"
+        },
+        "additional_properties": {
+          "$ref": "#/$defs/AdditionalProperties"
         }
       },
       "additionalProperties": false,

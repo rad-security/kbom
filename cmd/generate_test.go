@@ -210,10 +210,12 @@ func TestGenerateKBOM(t *testing.T) {
 							ResourcesCount: 2,
 							Resources: []model.Resource{
 								{
-									Name: "backend",
+									Name:                 "backend",
+									AdditionalProperties: &model.AdditionalProperties{Version: "v1.0.0"},
 								},
 								{
-									Name: "frontend",
+									Name:                 "frontend",
+									AdditionalProperties: &model.AdditionalProperties{Version: "v2.0.0"},
 								},
 							},
 						},
@@ -467,10 +469,16 @@ var expectedOutJSON = `{
           "count": 2,
           "resources": [
             {
-              "name": "backend"
+              "name": "backend",
+              "additional_properties": {
+                "spec.version": "v1.0.0"
+              }
             },
             {
-              "name": "frontend"
+              "name": "frontend",
+              "additional_properties": {
+                "spec.version": "v2.0.0"
+              }
             }
           ]
         }
