@@ -31,7 +31,8 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          # Force version to solve cache restore issue: https://github.com/actions/setup-go/issues/506
+          go-version: 1.23.2
           check-latest: true # https://github.com/actions/setup-go#check-latest-version
           cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
 
