@@ -218,6 +218,10 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 					Name:  RADPrefix + "pkg:digest",
 					Value: img.Digest,
 				},
+				{
+					Name:  RADPrefix + "pkg:namespace",
+					Value: img.Namespace,
+				},
 			},
 		}
 
