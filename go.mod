@@ -1,8 +1,6 @@
 module github.com/rad-security/kbom
 
-go 1.22.0
-
-toolchain go1.22.3
+go 1.23
 
 require (
 	github.com/CycloneDX/cyclonedx-go v0.7.2

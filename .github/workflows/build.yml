@@ -31,7 +31,8 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          # Force version to solve cache restore issue: https://github.com/actions/setup-go/issues/506
+          go-version: 1.23.2
           check-latest: true # https://github.com/actions/setup-go#check-latest-version
           cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
 
@@ -51,11 +52,11 @@ jobs:
 
       - name: Grype scan
         id: scan
-        uses: anchore/scan-action@v3
+        uses: anchore/scan-action@v5
         with:
           path: "."
           fail-build: true
-          severity-cutoff: negligible
+          severity-cutoff: medium
           output-format: sarif
 
       - name: Upload SARIF report

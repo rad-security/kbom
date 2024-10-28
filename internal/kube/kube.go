@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -370,10 +371,13 @@ func (k *k8sDB) AllResources(ctx context.Context, full bool, namespaceFilter []s
 			if full {
 				for _, item := range resourceList.Items {
 					res := model.Resource{
-						Name:      item.GetName(),
-						Namespace: item.GetNamespace(),
+						Name:                 item.GetName(),
+						Namespace:            item.GetNamespace(),
+						AdditionalProperties: map[string]string{},
 					}
-
+					if version, ok := getVersion(item); ok {
+						res.AdditionalProperties["version"] = version
+					}
 					val := resourceMap[gvr.String()]
 					val.Resources = append(val.Resources, res)
 					resourceMap[gvr.String()] = val
@@ -383,6 +387,22 @@ func (k *k8sDB) AllResources(ctx context.Context, full bool, namespaceFilter []s
 	}
 
 	return resourceMap, nil
+}
+
+func getVersion(item unstructured.Unstructured) (version string, ok bool) {
+
+	obj := item.Object
+	if obj == nil {
+		return "", false
+	}
+
+	spec, ok := obj["spec"].(map[string]interface{})
+	if !ok {
+		return "", false
+	}
+
+	version, ok = spec["version"].(string)
+	return
 }
 
 func getLabelValue(labels map[string]string, key string) string {

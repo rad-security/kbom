@@ -63,10 +63,11 @@ type Components struct {
 }
 
 type Resource struct {
-	Kind       string `json:"kind,omitempty"`
-	APIVersion string `json:"api_version,omitempty"`
-	Name       string `json:"name"`
-	Namespace  string `json:"namespace,omitempty"`
+	Kind                 string            `json:"kind,omitempty"`
+	APIVersion           string            `json:"api_version,omitempty"`
+	Name                 string            `json:"name"`
+	Namespace            string            `json:"namespace,omitempty"`
+	AdditionalProperties map[string]string `json:"additional_properties,omitempty"`
 }
 
 type ResourceList struct {

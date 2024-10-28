@@ -249,6 +249,13 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 				},
 			}
 
+			if version, ok := res.AdditionalProperties["version"]; ok {
+				properties = append(properties, cyclonedx.Property{
+					Name:  RADPrefix + K8sComponentVersion,
+					Value: version,
+				})
+			}
+
 			if resList.Namespaced {
 				properties = append(properties, cyclonedx.Property{
 					Name:  RADPrefix + "k8s:component:namespace",
