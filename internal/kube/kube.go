@@ -366,7 +366,6 @@ func (k *k8sDB) AllResources(ctx context.Context, full bool) (map[string]model.R
 }
 
 func getVersion(item unstructured.Unstructured) (version string, ok bool) {
-
 	obj := item.Object
 	if obj == nil {
 		return "", false
