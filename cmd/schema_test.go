@@ -289,6 +289,12 @@ var expectedSchema = `{
         },
         "namespace": {
           "type": "string"
+        },
+        "additional_properties": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
         }
       },
       "additionalProperties": false,
