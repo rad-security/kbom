@@ -3,7 +3,7 @@ module github.com/rad-security/kbom
 go 1.23
 
 require (
-	github.com/CycloneDX/cyclonedx-go v0.7.2
+	github.com/CycloneDX/cyclonedx-go v0.8.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/distribution/reference v0.6.0
 	github.com/google/uuid v1.6.0
