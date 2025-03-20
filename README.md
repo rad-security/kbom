@@ -13,6 +13,9 @@ The KBOM project provides an initial specification in JSON and has been construc
 
 ## Getting Started
 
+### Download KBOM
+If you prefer to download the binary, you can do so from the [releases page](https://github.com/rad-security/kbom/releases).
+
 ### Installation
 
 ```sh
