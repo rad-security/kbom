@@ -11,7 +11,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.24'
           check-latest: true # https://github.com/actions/setup-go#check-latest-version
           cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
 

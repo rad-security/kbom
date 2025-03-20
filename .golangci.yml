@@ -9,26 +9,22 @@ linters-settings:
     min-occurrences: 3
   gocritic:
     enabled-tags:
-    - diagnostic
-    - experimental
-    - opinionated
-    - performance
-    - style
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
     disabled-checks:
-    - dupImport # https://github.com/go-critic/go-critic/issues/845
-    - ifElseChain
-    - octalLiteral
-    - whyNoLint
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
   gocyclo:
     min-complexity: 15
   goimports:
     local-prefixes: github.com/rad-security
-  golint:
-    min-confidence: 0
   lll:
     line-length: 140
-  maligned:
-    suggest-new: true
   misspell:
     locale: US
 
@@ -37,34 +33,34 @@ linters:
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   disable-all: true
   enable:
-  - bodyclose
-  - dogsled
-  - dupl
-  - errcheck
-  - exportloopref
-  - funlen
-  - goconst
-  - gocritic
-  - gocyclo
-  - gofmt
-  - goimports
-  - goprintffuncname
-  - gosec
-  - gosimple
-  - govet
-  - ineffassign
-  - lll
-  - misspell
-  - nakedret
-  - noctx
-  - nolintlint
-  - staticcheck
-  - stylecheck
-  - typecheck
-  - unconvert
-  - unparam
-  - unused
-  - whitespace
+    - bodyclose
+    - dogsled
+    - dupl
+    - errcheck
+    - copyloopvar
+    - funlen
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
 
 issues:
   exclude-rules:
