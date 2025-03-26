@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/golang-collections/collections/set"
 	"io"
 	"os"
 	"path"
@@ -31,10 +32,13 @@ const (
 )
 
 var (
-	short   bool
-	output  string
-	format  string
-	outPath string
+	short           bool
+	output          string
+	format          string
+	outPath         string
+	namespaceFilter string
+
+	resourceFilter string
 
 	generatedAt = time.Now()
 	kbomID      = uuid.New().String()
@@ -51,6 +55,8 @@ func init() {
 	GenerateCmd.Flags().StringVarP(&output, "output", "o", StdOutput, "Output (stdout, file)")
 	GenerateCmd.Flags().StringVarP(&format, "format", "f", JSONFormat.Name, fmt.Sprintf("Format (%s)", strings.Join(formatNames(), ", ")))
 	GenerateCmd.Flags().StringVarP(&outPath, "out-path", "p", ".", "Path to write KBOM file to. Works only with --output=file")
+	GenerateCmd.Flags().StringVarP(&namespaceFilter, "namespace", "n", "", "Filter only the given namespaces")
+	GenerateCmd.Flags().StringVarP(&resourceFilter, "resource", "r", "", "Filter only the given resources")
 
 	utils.BindFlags(GenerateCmd)
 }
@@ -69,6 +75,9 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 	if err != nil {
 		return err
 	}
+
+	var kbomFilters model.Filters
+	kbomFilters = utils.GetFilterValue(namespaceFilter, resourceFilter)
 
 	ctx := context.Background()
 	k8sVersion, caCertDigest, err := k8sClient.Metadata(ctx)
@@ -92,12 +101,17 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 		return err
 	}
 
-	allImages, err := k8sClient.AllImages(ctx)
+	namespaceFilters := utils.ConvertListToSet(kbomFilters.Namespace)
+	allImages, err := k8sClient.AllImages(ctx, namespaceFilters)
 	if err != nil {
 		return err
 	}
 
-	resources, err := k8sClient.AllResources(ctx, full)
+	var targetKind *set.Set
+	if len(kbomFilters.Resources) > 0 {
+		targetKind = utils.ConvertListToSet(kbomFilters.Resources)
+	}
+	resources, err := k8sClient.AllResources(ctx, full, kbomFilters.Namespace, targetKind)
 	if err != nil {
 		return err
 	}
