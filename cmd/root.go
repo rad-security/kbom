@@ -99,5 +99,5 @@ func initLogger() {
 }
 
 func isTerminal() bool {
-	return term.IsTerminal(int(os.Stdout.Fd()))
+	return term.IsTerminal(int(os.Stdout.Fd())) //nolint:gosec
 }

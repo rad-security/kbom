@@ -230,10 +230,7 @@ func containerToImage(img, imgName string, statuses []v1.ContainerStatus, namesp
 		return nil, err
 	}
 
-	controlPlane := false
-	if namespace == "kube-system" {
-		controlPlane = true
-	}
+	controlPlane := namespace == "kube-system"
 
 	res := &model.Image{
 		FullName:     img,
