@@ -73,7 +73,7 @@ signs:
 brews:
   - repository:
       owner: rad-security
-      name: homebrew-kbom
+      name: homebrew
     homepage: "https://github.com/rad-security/kbom"
     description: "The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry."
     license: "Apache 2"
