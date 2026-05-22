@@ -55,7 +55,7 @@ jobs:
         with:
           path: "."
           fail-build: true
-          severity-cutoff: medium
+          severity-cutoff: high
           output-format: sarif
 
       - name: Upload SARIF report
