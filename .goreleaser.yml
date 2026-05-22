@@ -30,6 +30,8 @@ builds:
     ignore:
       - goos: darwin
         goarch: "386"
+      - goos: windows
+        goarch: arm
     ldflags:
       - -X "{{.Env.CFG_PACKAGE_NAME}}.AppName=kbom"
       - -X "{{.Env.CFG_PACKAGE_NAME}}.AppVersion={{.Env.VERSION}}"
