@@ -82,21 +82,6 @@ brews:
     test: |
       system "#{bin}/kbom", "version"
 
-dockers:
-  - goos: linux
-    goarch: amd64
-    dockerfile: build/package/Dockerfile.gorelease
-    image_templates:
-      - us.gcr.io/{{.Env.GCR_ORG}}/{{.Env.APP_NAME}}:{{- if .IsSnapshot -}}{{ .Env.VERSION }}{{- else -}}{{ .Tag }}{{- end -}}
-    build_flag_templates:
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.source=https://{{.Env.PACKAGE_NAME}}"
-      - "--platform=linux/amd64"
-
 checksum:
   name_template: "checksums.txt"
 
