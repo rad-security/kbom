@@ -19,7 +19,7 @@ If you prefer to download the binary, you can do so from the [releases page](htt
 ### Installation
 
 ```sh
-brew install rad-security/homebrew/kbom
+brew install rad-security/tap/kbom
 ```
 
 or
