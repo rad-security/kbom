@@ -36,7 +36,7 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
@@ -99,5 +99,10 @@ func initLogger() {
 }
 
 func isTerminal() bool {
-	return term.IsTerminal(int(os.Stdout.Fd()))
+	return isTerminalWriter(os.Stdout)
+}
+
+func isTerminalWriter(w io.Writer) bool {
+	f, ok := w.(*os.File)
+	return ok && term.IsTerminal(int(f.Fd()))
 }

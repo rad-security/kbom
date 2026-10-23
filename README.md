@@ -44,8 +44,11 @@ Flags:
   -h, --help              help for generate
   -p, --out-path string   Path to write KBOM file to. Works only with --output=file (default ".")
   -o, --output string     Output (stdout, file) (default "stdout")
+  -q, --quiet             Quiet - do not print progress to stderr
       --short             Short - only include metadata, nodes, images and resources counters
 ```
+
+Progress is printed to stderr, so it does not interfere with the KBOM written to stdout.
 
 ## Schema
 
