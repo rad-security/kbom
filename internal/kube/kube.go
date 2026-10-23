@@ -153,7 +153,7 @@ func (k *k8sDB) AllNodes(ctx context.Context, full bool) ([]model.Node, error) {
 			KernelVersion:           nodes.Items[i].Status.NodeInfo.KernelVersion,
 			ContainerRuntimeVersion: nodes.Items[i].Status.NodeInfo.ContainerRuntimeVersion,
 			BootID:                  nodes.Items[i].Status.NodeInfo.BootID,
-			KubeProxyVersion:        nodes.Items[i].Status.NodeInfo.KubeProxyVersion,
+			KubeProxyVersion:        nodes.Items[i].Status.NodeInfo.KubeProxyVersion, //nolint:staticcheck // part of KBOM schema
 			KubeletVersion:          nodes.Items[i].Status.NodeInfo.KubeletVersion,
 			OperatingSystem:         nodes.Items[i].Status.NodeInfo.OperatingSystem,
 		})

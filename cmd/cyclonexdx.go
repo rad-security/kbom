@@ -31,11 +31,14 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 	cdxBOM.SerialNumber = uuid.New().URN()
 	cdxBOM.Metadata = &cyclonedx.Metadata{
 		Timestamp: time.Now().Format(time.RFC3339),
-		Tools: &[]cyclonedx.Tool{
-			{
-				Vendor:  kbom.GeneratedBy.Vendor,
-				Name:    kbom.GeneratedBy.Name,
-				Version: kbom.GeneratedBy.Version,
+		Tools: &cyclonedx.ToolsChoice{
+			Components: &[]cyclonedx.Component{
+				{
+					Type:     cyclonedx.ComponentTypeApplication,
+					Supplier: &cyclonedx.OrganizationalEntity{Name: kbom.GeneratedBy.Vendor},
+					Name:     kbom.GeneratedBy.Name,
+					Version:  kbom.GeneratedBy.Version,
+				},
 			},
 		},
 	}

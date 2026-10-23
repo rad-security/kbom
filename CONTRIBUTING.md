@@ -34,7 +34,7 @@ To discuss ideas and specifications we use [GitHub Discussions](https://github.c
 
 Prerequisites:
 
-* go >= 1.20
+* go >= 1.27
 * kind
 * golangci-lint
 
