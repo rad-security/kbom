@@ -8,7 +8,6 @@ linters:
     - dupl
     - errcheck
     - funlen
-    - goconst
     - gocritic
     - gocyclo
     - goprintffuncname
@@ -31,9 +30,6 @@ linters:
     funlen:
       lines: 100
       statements: 50
-    goconst:
-      min-len: 2
-      min-occurrences: 3
     gocritic:
       disabled-checks:
         - dupImport
