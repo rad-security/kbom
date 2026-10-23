@@ -2,7 +2,6 @@
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/rad-security/kbom)
 ![Hex.pm](https://img.shields.io/hexpm/l/apa)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rad-security/kbom)](https://goreportcard.com/report/github.com/rad-security/kbom)
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/7273/badge)](https://bestpractices.coreinfrastructure.org/projects/7273)
 
 The Kubernetes Bill of Materials (KBOM) standard provides insight into container orchestration tools widely used across the industry.
