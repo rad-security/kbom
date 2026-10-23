@@ -62,7 +62,7 @@ func TestGenerateKBOM(t *testing.T) {
 		{
 			name: "all resources error",
 			clientMock: &mockedK8sClient{
-				allResources: func(context.Context, bool) (map[string]model.ResourceList, error) {
+				allResources: func(context.Context, bool, kube.ProgressFunc) (map[string]model.ResourceList, error) {
 					return nil, fmt.Errorf("all resources error")
 				},
 			},
@@ -201,7 +201,7 @@ func TestGenerateKBOM(t *testing.T) {
 						},
 					}, nil
 				},
-				allResources: func(context.Context, bool) (map[string]model.ResourceList, error) {
+				allResources: func(context.Context, bool, kube.ProgressFunc) (map[string]model.ResourceList, error) {
 					return map[string]model.ResourceList{
 						"/v1, Resource=namespaces": {
 							Kind:           "Namespace",
@@ -250,6 +250,8 @@ func TestGenerateKBOM(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mock := &stdoutMock{buf: bytes.Buffer{}}
 			out = mock
+			progressBuf := &bytes.Buffer{}
+			progressOut = progressBuf
 			kbomID = tc.idMock
 			if tc.timeMock != "" {
 				mockedTime, err := time.Parse(time.RFC3339, tc.timeMock)
@@ -272,8 +274,10 @@ func TestGenerateKBOM(t *testing.T) {
 			err := generateKBOM(tc.clientMock)
 			if tc.expectedErr != nil {
 				assert.EqualError(t, err, tc.expectedErr.Error())
+				assert.NotContains(t, progressBuf.String(), "KBOM written")
 			} else {
 				assert.NoError(t, err)
+				assert.Contains(t, progressBuf.String(), "✓ KBOM written to")
 			}
 
 			if output == FileOutput {
@@ -302,7 +306,7 @@ type mockedK8sClient struct {
 	location     func(context.Context) (*model.Location, error)
 	allImages    func(context.Context) ([]model.Image, error)
 	allNodes     func(context.Context, bool) ([]model.Node, error)
-	allResources func(context.Context, bool) (map[string]model.ResourceList, error)
+	allResources func(context.Context, bool, kube.ProgressFunc) (map[string]model.ResourceList, error)
 }
 
 func (m *mockedK8sClient) ClusterName(ctx context.Context) (clusterName string, err error) {
@@ -340,11 +344,11 @@ func (m *mockedK8sClient) AllNodes(ctx context.Context, full bool) ([]model.Node
 	return m.allNodes(ctx, full)
 }
 
-func (m *mockedK8sClient) AllResources(ctx context.Context, full bool) (map[string]model.ResourceList, error) {
+func (m *mockedK8sClient) AllResources(ctx context.Context, full bool, progress kube.ProgressFunc) (map[string]model.ResourceList, error) {
 	if m.allResources == nil {
 		return nil, nil
 	}
-	return m.allResources(ctx, full)
+	return m.allResources(ctx, full, progress)
 }
 
 var mockCACert = "1234567890"

@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"slices"
 	"strings"
+	"sync"
 
 	"github.com/Masterminds/semver"
 	"github.com/distribution/reference"
@@ -15,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/metadata"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -22,13 +25,48 @@ import (
 	"github.com/rad-security/kbom/internal/model"
 )
 
+const (
+	// client-go defaults (5 QPS, burst 10) throttle the hundreds of list calls needed for a KBOM
+	clientQPS   = 50
+	clientBurst = 100
+
+	listPageSize = 500
+	listWorkers  = 8
+)
+
+// metadataOnlyGroups are built-in API groups whose resources have no spec.version,
+// so they can be listed without fetching full objects (e.g. secret data).
+var metadataOnlyGroups = map[string]bool{
+	"":                             true,
+	"admissionregistration.k8s.io": true,
+	"apiextensions.k8s.io":         true,
+	"apps":                         true,
+	"autoscaling":                  true,
+	"batch":                        true,
+	"certificates.k8s.io":          true,
+	"coordination.k8s.io":          true,
+	"discovery.k8s.io":             true,
+	"events.k8s.io":                true,
+	"flowcontrol.apiserver.k8s.io": true,
+	"networking.k8s.io":            true,
+	"node.k8s.io":                  true,
+	"policy":                       true,
+	"rbac.authorization.k8s.io":    true,
+	"resource.k8s.io":              true,
+	"scheduling.k8s.io":            true,
+	"storage.k8s.io":               true,
+}
+
+// ProgressFunc is called after each resource type is listed.
+type ProgressFunc func(done, total int, resource string)
+
 type K8sClient interface {
 	ClusterName(ctx context.Context) (string, error)
 	Metadata(ctx context.Context) (string, string, error)
 	Location(ctx context.Context) (*model.Location, error)
 	AllImages(ctx context.Context) ([]model.Image, error)
 	AllNodes(ctx context.Context, full bool) ([]model.Node, error)
-	AllResources(ctx context.Context, full bool) (map[string]model.ResourceList, error)
+	AllResources(ctx context.Context, full bool, progress ProgressFunc) (map[string]model.ResourceList, error)
 }
 
 func NewClient(k8sContext string) (K8sClient, error) {
@@ -58,6 +96,9 @@ func NewClient(k8sContext string) (K8sClient, error) {
 		}
 	}
 
+	cfg.QPS = clientQPS
+	cfg.Burst = clientBurst
+
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("can not create kubernetes client: %w", err)
@@ -68,21 +109,28 @@ func NewClient(k8sContext string) (K8sClient, error) {
 		return nil, fmt.Errorf("can not create kubernetes dynamic client: %w", err)
 	}
 
+	metadataClient, err := metadata.NewForConfig(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("can not create kubernetes metadata client: %w", err)
+	}
+
 	rest.SetDefaultWarningHandler(rest.NoWarnings{})
 
 	return &k8sDB{
-		k8sContext:    currentK8sContext,
-		cfg:           cfg,
-		client:        clientset,
-		dynamicClient: dynamicClient,
+		k8sContext:     currentK8sContext,
+		cfg:            cfg,
+		client:         clientset,
+		dynamicClient:  dynamicClient,
+		metadataClient: metadataClient,
 	}, nil
 }
 
 type k8sDB struct {
-	k8sContext    string
-	cfg           *rest.Config
-	client        kubernetes.Interface
-	dynamicClient dynamic.Interface
+	k8sContext     string
+	cfg            *rest.Config
+	client         kubernetes.Interface
+	dynamicClient  dynamic.Interface
+	metadataClient metadata.Interface
 }
 
 func (k *k8sDB) ClusterName(ctx context.Context) (string, error) {
@@ -158,52 +206,51 @@ func (k *k8sDB) AllNodes(ctx context.Context, full bool) ([]model.Node, error) {
 }
 
 func (k *k8sDB) AllImages(ctx context.Context) ([]model.Image, error) {
-	namespaces, err := k.client.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	pods, err := listPages(ctx, func(opts metav1.ListOptions) ([]v1.Pod, string, error) {
+		list, err := k.client.CoreV1().Pods(metav1.NamespaceAll).List(ctx, opts)
+		if err != nil {
+			return nil, "", err
+		}
+		return list.Items, list.Continue, nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list namespaces: %v", err)
+		return nil, fmt.Errorf("failed to list pods: %w", err)
 	}
 
+	log.Debug().Int("count", len(pods)).Msg("Found pods")
+
 	images := make(map[string]model.Image)
-	for i := range namespaces.Items {
-		pods, err := k.client.CoreV1().Pods(namespaces.Items[i].Name).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("failed to list pods: %w", err)
+	for j := range pods {
+		pod := pods[j]
+		namespace := pod.Namespace
+
+		for k := range pod.Spec.InitContainers {
+			img, err := containerToImage(pod.Spec.InitContainers[k].Image,
+				pod.Spec.InitContainers[k].Name, pod.Status.InitContainerStatuses, namespace)
+			if err != nil {
+				return nil, err
+			}
+
+			images[img.FullName] = *img
 		}
-		namespace := namespaces.Items[i].Name
 
-		log.Debug().Str("namespace", namespace).Int("count", len(pods.Items)).Msg("Found pods in namespace")
-
-		for j := range pods.Items {
-			pod := pods.Items[j]
-
-			for k := range pod.Spec.InitContainers {
-				img, err := containerToImage(pod.Spec.InitContainers[k].Image,
-					pod.Spec.InitContainers[k].Name, pod.Status.InitContainerStatuses, namespace)
-				if err != nil {
-					return nil, err
-				}
-
-				images[img.FullName] = *img
+		for k := range pod.Spec.Containers {
+			img, err := containerToImage(pod.Spec.Containers[k].Image, pod.Spec.Containers[k].Name, pod.Status.ContainerStatuses, namespace)
+			if err != nil {
+				return nil, err
 			}
 
-			for k := range pod.Spec.Containers {
-				img, err := containerToImage(pod.Spec.Containers[k].Image, pod.Spec.Containers[k].Name, pod.Status.ContainerStatuses, namespace)
-				if err != nil {
-					return nil, err
-				}
+			images[img.FullName] = *img
+		}
 
-				images[img.FullName] = *img
+		for k := range pod.Spec.EphemeralContainers {
+			img, err := containerToImage(pod.Spec.EphemeralContainers[k].Image,
+				pod.Spec.EphemeralContainers[k].Name, pod.Status.EphemeralContainerStatuses, namespace)
+			if err != nil {
+				return nil, err
 			}
 
-			for k := range pod.Spec.EphemeralContainers {
-				img, err := containerToImage(pod.Spec.EphemeralContainers[k].Image,
-					pod.Spec.EphemeralContainers[k].Name, pod.Status.EphemeralContainerStatuses, namespace)
-				if err != nil {
-					return nil, err
-				}
-
-				images[img.FullName] = *img
-			}
+			images[img.FullName] = *img
 		}
 	}
 
@@ -297,13 +344,19 @@ func (k *k8sDB) Metadata(ctx context.Context) (k8sVersion, caDigest string, err 
 	return ver, caDigest, nil
 }
 
-func (k *k8sDB) AllResources(ctx context.Context, full bool) (map[string]model.ResourceList, error) {
+type listTarget struct {
+	gvr        schema.GroupVersionResource
+	kind       string
+	namespaced bool
+}
+
+func (k *k8sDB) AllResources(ctx context.Context, full bool, progress ProgressFunc) (map[string]model.ResourceList, error) {
 	apiResourceList, err := k.client.Discovery().ServerPreferredResources()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get api groups: %w", err)
 	}
 
-	resourceMap := make(map[string]model.ResourceList)
+	var targets []listTarget
 	for _, apiResource := range apiResourceList {
 		gv, err := schema.ParseGroupVersion(apiResource.GroupVersion)
 		if err != nil {
@@ -312,49 +365,153 @@ func (k *k8sDB) AllResources(ctx context.Context, full bool) (map[string]model.R
 
 		for i := range apiResource.APIResources {
 			res := apiResource.APIResources[i]
-			gvr := schema.GroupVersionResource{
-				Group:    gv.Group,
-				Version:  gv.Version,
-				Resource: res.Name,
-			}
-
-			resourceList, err := k.dynamicClient.Resource(gvr).List(ctx, metav1.ListOptions{})
-			if err != nil {
-				log.Debug().Err(err).Interface("gvr", gvr).Msg("Failed to list resources")
+			if !slices.Contains(res.Verbs, "list") {
 				continue
 			}
 
-			log.Debug().Interface("gvr", gvr).Int("count", len(resourceList.Items)).Msg("Found resources")
-
-			if len(resourceList.Items) > 0 {
-				resourceMap[gvr.String()] = model.ResourceList{
-					Kind:           resourceList.Items[0].GetKind(),
-					APIVersion:     gvr.GroupVersion().String(),
-					Namespaced:     res.Namespaced,
-					ResourcesCount: len(resourceList.Items),
-					Resources:      make([]model.Resource, 0),
-				}
-			}
-
-			if full {
-				for _, item := range resourceList.Items {
-					res := model.Resource{
-						Name:                 item.GetName(),
-						Namespace:            item.GetNamespace(),
-						AdditionalProperties: map[string]string{},
-					}
-					if version, ok := getVersion(item); ok {
-						res.AdditionalProperties["version"] = version
-					}
-					val := resourceMap[gvr.String()]
-					val.Resources = append(val.Resources, res)
-					resourceMap[gvr.String()] = val
-				}
-			}
+			targets = append(targets, listTarget{gvr: gv.WithResource(res.Name), kind: res.Kind, namespaced: res.Namespaced})
 		}
 	}
 
+	var (
+		mu          sync.Mutex
+		wg          sync.WaitGroup
+		done        int
+		resourceMap = make(map[string]model.ResourceList)
+		workers     = make(chan struct{}, listWorkers)
+	)
+
+	for _, target := range targets {
+		wg.Go(func() {
+			workers <- struct{}{}
+			defer func() { <-workers }()
+
+			resources, err := k.listResources(ctx, target.gvr, full)
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			done++
+			if progress != nil {
+				progress(done, len(targets), target.gvr.Resource)
+			}
+
+			if err != nil {
+				log.Debug().Err(err).Interface("gvr", target.gvr).Msg("Failed to list resources")
+				return
+			}
+
+			log.Debug().Interface("gvr", target.gvr).Int("count", len(resources)).Msg("Found resources")
+
+			if len(resources) == 0 {
+				return
+			}
+
+			resourceList := model.ResourceList{
+				Kind:           target.kind,
+				APIVersion:     target.gvr.GroupVersion().String(),
+				Namespaced:     target.namespaced,
+				ResourcesCount: len(resources),
+				Resources:      make([]model.Resource, 0),
+			}
+			if full {
+				resourceList.Resources = resources
+			}
+
+			resourceMap[target.gvr.String()] = resourceList
+		})
+	}
+
+	wg.Wait()
+
 	return resourceMap, nil
+}
+
+// listResources lists only object metadata when possible and falls back to full objects
+// when spec.version is needed or the API server does not support metadata-only lists.
+func (k *k8sDB) listResources(ctx context.Context, gvr schema.GroupVersionResource, full bool) ([]model.Resource, error) {
+	if !full || metadataOnlyGroups[gvr.Group] {
+		resources, err := k.listMetadata(ctx, gvr)
+		if err == nil {
+			return resources, nil
+		}
+
+		log.Debug().Err(err).Interface("gvr", gvr).Msg("Failed to list metadata, falling back to full objects")
+	}
+
+	items, err := listPages(ctx, func(opts metav1.ListOptions) ([]unstructured.Unstructured, string, error) {
+		list, err := k.dynamicClient.Resource(gvr).List(ctx, opts)
+		if err != nil {
+			return nil, "", err
+		}
+		return list.Items, list.GetContinue(), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resources := make([]model.Resource, 0, len(items))
+	for _, item := range items {
+		res := model.Resource{
+			Name:                 item.GetName(),
+			Namespace:            item.GetNamespace(),
+			AdditionalProperties: map[string]string{},
+		}
+		if version, ok := getVersion(item); ok {
+			res.AdditionalProperties["version"] = version
+		}
+		resources = append(resources, res)
+	}
+
+	return resources, nil
+}
+
+func (k *k8sDB) listMetadata(ctx context.Context, gvr schema.GroupVersionResource) ([]model.Resource, error) {
+	items, err := listPages(ctx, func(opts metav1.ListOptions) ([]metav1.PartialObjectMetadata, string, error) {
+		list, err := k.metadataClient.Resource(gvr).List(ctx, opts)
+		if err != nil {
+			return nil, "", err
+		}
+		return list.Items, list.Continue, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resources := make([]model.Resource, 0, len(items))
+	for i := range items {
+		resources = append(resources, model.Resource{
+			Name:                 items[i].Name,
+			Namespace:            items[i].Namespace,
+			AdditionalProperties: map[string]string{},
+		})
+	}
+
+	return resources, nil
+}
+
+// listPages calls list until all pages are fetched.
+func listPages[T any](ctx context.Context, list func(metav1.ListOptions) ([]T, string, error)) ([]T, error) {
+	var all []T
+
+	opts := metav1.ListOptions{Limit: listPageSize}
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
+		items, next, err := list(opts)
+		if err != nil {
+			return nil, err
+		}
+
+		all = append(all, items...)
+		if next == "" {
+			return all, nil
+		}
+
+		opts.Continue = next
+	}
 }
 
 func getVersion(item unstructured.Unstructured) (version string, ok bool) {

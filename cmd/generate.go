@@ -18,6 +18,7 @@ import (
 	"github.com/rad-security/kbom/internal/config"
 	"github.com/rad-security/kbom/internal/kube"
 	"github.com/rad-security/kbom/internal/model"
+	"github.com/rad-security/kbom/internal/progress"
 	"github.com/rad-security/kbom/internal/utils"
 )
 
@@ -32,9 +33,12 @@ const (
 
 var (
 	short   bool
+	quiet   bool
 	output  string
 	format  string
 	outPath string
+
+	progressOut io.Writer = os.Stderr
 
 	generatedAt = time.Now()
 	kbomID      = uuid.New().String()
@@ -51,6 +55,7 @@ func init() {
 	GenerateCmd.Flags().StringVarP(&output, "output", "o", StdOutput, "Output (stdout, file)")
 	GenerateCmd.Flags().StringVarP(&format, "format", "f", JSONFormat.Name, fmt.Sprintf("Format (%s)", strings.Join(formatNames(), ", ")))
 	GenerateCmd.Flags().StringVarP(&outPath, "out-path", "p", ".", "Path to write KBOM file to. Works only with --output=file")
+	GenerateCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet - do not print progress to stderr")
 
 	utils.BindFlags(GenerateCmd)
 }
@@ -71,33 +76,59 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 	}
 
 	ctx := context.Background()
+	reporter := newReporter()
+
+	step := reporter.Start("Connecting to cluster")
 	k8sVersion, caCertDigest, err := k8sClient.Metadata(ctx)
 	if err != nil {
+		step.Fail()
 		return err
 	}
 
 	clusterName, err := k8sClient.ClusterName(ctx)
 	if err != nil {
+		step.Fail()
 		return err
 	}
+	step.Done(fmt.Sprintf("Connected to %s (Kubernetes %s)", clusterName, k8sVersion))
 
 	full := !short
-	nodes, err := k8sClient.AllNodes(ctx, full)
+	var loc *model.Location
+	nodes, err := runStep(reporter, "Collecting nodes", func(*progress.Step) ([]model.Node, error) {
+		nodes, err := k8sClient.AllNodes(ctx, full)
+		if err != nil {
+			return nil, err
+		}
+
+		loc, err = k8sClient.Location(ctx)
+		return nodes, err
+	}, func(nodes []model.Node) string {
+		return fmt.Sprintf("Found %d nodes", len(nodes))
+	})
 	if err != nil {
 		return err
 	}
 
-	loc, err := k8sClient.Location(ctx)
+	allImages, err := runStep(reporter, "Collecting images", func(*progress.Step) ([]model.Image, error) {
+		return k8sClient.AllImages(ctx)
+	}, func(images []model.Image) string {
+		return fmt.Sprintf("Found %d images", len(images))
+	})
 	if err != nil {
 		return err
 	}
 
-	allImages, err := k8sClient.AllImages(ctx)
-	if err != nil {
-		return err
-	}
-
-	resources, err := k8sClient.AllResources(ctx, full)
+	resources, err := runStep(reporter, "Listing resources", func(s *progress.Step) (map[string]model.ResourceList, error) {
+		return k8sClient.AllResources(ctx, full, func(done, total int, resource string) {
+			s.Update(done, total, resource)
+		})
+	}, func(resources map[string]model.ResourceList) string {
+		count := 0
+		for _, r := range resources {
+			count += r.ResourcesCount
+		}
+		return fmt.Sprintf("Found %d resource types (%d objects)", len(resources), count)
+	})
 	if err != nil {
 		return err
 	}
@@ -130,20 +161,54 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 		},
 	}
 
-	if err := printKBOM(&kbom, parsedFormat); err != nil {
-		return err
-	}
+	_, err = runStep(reporter, "Writing KBOM", func(*progress.Step) (string, error) {
+		return printKBOM(&kbom, parsedFormat)
+	}, func(filename string) string {
+		if filename == "" {
+			return "KBOM written to stdout"
+		}
+		return "KBOM written to " + filename
+	})
 
-	return nil
+	return err
 }
 
-func printKBOM(kbom *model.KBOM, f Format) error {
-	writer, err := getWriter(kbom, f)
+func newReporter() *progress.Reporter {
+	if quiet {
+		return progress.New(nil, false)
+	}
+
+	// verbose logs are written to stderr too, so do not redraw lines in place
+	return progress.New(progressOut, !verbose && isTerminalWriter(progressOut))
+}
+
+// runStep runs fn as a progress step and finishes it with summary on success.
+func runStep[T any](r *progress.Reporter, title string, fn func(*progress.Step) (T, error), summary func(T) string) (T, error) {
+	step := r.Start(title)
+
+	result, err := fn(step)
 	if err != nil {
-		return err
+		step.Fail()
+		return result, err
+	}
+
+	step.Done(summary(result))
+
+	return result, nil
+}
+
+// printKBOM writes the KBOM and returns the file name, or an empty string for stdout.
+func printKBOM(kbom *model.KBOM, f Format) (string, error) {
+	writer, filename, err := getWriter(kbom, f)
+	if err != nil {
+		return "", err
 	}
 	defer writer.Close()
 
+	return filename, encodeKBOM(writer, kbom)
+}
+
+func encodeKBOM(writer io.Writer, kbom *model.KBOM) error {
 	switch format {
 	case JSONFormat.Name:
 		enc := json.NewEncoder(writer)
@@ -170,10 +235,10 @@ func printKBOM(kbom *model.KBOM, f Format) error {
 	}
 }
 
-func getWriter(kbom *model.KBOM, format Format) (io.WriteCloser, error) {
+func getWriter(kbom *model.KBOM, format Format) (io.WriteCloser, string, error) {
 	switch output {
 	case StdOutput:
-		return out, nil
+		return out, "", nil
 	case FileOutput:
 		formattedTime := kbom.GeneratedAt.Format("2006-01-02-15-04-05")
 		key := kbom.ID[:8]
@@ -181,13 +246,14 @@ func getWriter(kbom *model.KBOM, format Format) (io.WriteCloser, error) {
 			key = kbom.Cluster.CACertDigest[:8]
 		}
 
-		f, err := os.Create(path.Join(outPath, fmt.Sprintf("kbom-%s-%s.%s", key, formattedTime, format.FileExtension)))
+		filename := path.Join(outPath, fmt.Sprintf("kbom-%s-%s.%s", key, formattedTime, format.FileExtension))
+		f, err := os.Create(filename)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
-		return f, nil
+		return f, filename, nil
 	default:
-		return nil, fmt.Errorf("output %q is not supported", output)
+		return nil, "", fmt.Errorf("output %q is not supported", output)
 	}
 }
