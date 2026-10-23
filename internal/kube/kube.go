@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/Masterminds/semver"
@@ -37,13 +36,9 @@ func NewClient(k8sContext string) (K8sClient, error) {
 
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
-		kubeConfigPath := os.Getenv("KUBECONFIG")
-		if kubeConfigPath == "" {
-			kubeConfigPath = os.Getenv("HOME") + "/.kube/config"
-		}
-
+		// Default loading rules handle KUBECONFIG with multiple files and fall back to ~/.kube/config
 		clientConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-			&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfigPath},
+			clientcmd.NewDefaultClientConfigLoadingRules(),
 			&clientcmd.ConfigOverrides{
 				CurrentContext: k8sContext,
 			})
