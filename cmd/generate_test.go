@@ -492,25 +492,23 @@ var expectedOutJSON = `{
 }
 `
 var expectedOutYAML = `id: "00000001"
-bomformat: rad
-specversion: "0.3"
-generatedat: 2023-04-26T10:00:00Z
-generatedby:
+bom_format: rad
+spec_version: "0.3"
+generated_at: 2023-04-26T10:00:00Z
+generated_by:
   vendor: RAD Security
   name: unknown
-  buildtime: unknown
+  build_time: unknown
   version: unknown
   commit: unknown
-  committime: unknown
+  commit_time: unknown
 cluster:
   name: test-cluster
-  cacertdigest: "1234567890"
-  k8sversion: 1.25.1
-  cniversion: ""
+  ca_cert_digest: "1234567890"
+  k8s_version: 1.25.1
   location: null
-  nodescount: 0
+  nodes_count: 0
   nodes: []
   components:
-    images: []
     resources: {}
 `
