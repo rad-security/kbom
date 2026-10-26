@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
@@ -145,8 +146,9 @@ func (k *k8sDB) Location(ctx context.Context) (*model.Location, error) {
 		return nil, fmt.Errorf("failed to list nodes: %v", err)
 	}
 
+	// clusters can have no nodes (e.g. scaled to zero), location is unknown then
 	if len(node.Items) == 0 {
-		return nil, fmt.Errorf("no node found")
+		return nil, nil
 	}
 
 	// get location from node labels
@@ -329,19 +331,44 @@ func (k *k8sDB) Metadata(ctx context.Context) (k8sVersion, caDigest string, err 
 
 	version, err := k.client.Discovery().ServerVersion()
 	if err != nil {
-		return caDigest, "", fmt.Errorf("error getting k8s version: %w", err)
+		return "", caDigest, fmt.Errorf("error getting k8s version: %w", err)
 	}
 
 	ver := strings.Trim(version.GitVersion, "v")
 
 	sVer, err := semver.NewVersion(ver)
 	if err != nil {
-		return caDigest, "", fmt.Errorf("error parsing k8s version: %w", err)
+		return "", caDigest, fmt.Errorf("error parsing k8s version: %w", err)
 	}
 
 	ver = fmt.Sprintf("%d.%d.%d", sVer.Major(), sVer.Minor(), sVer.Patch())
 
 	return ver, caDigest, nil
+}
+
+// preferredResources returns the preferred API resources. When only some API groups are
+// unavailable (e.g. a broken metrics-server APIService), it logs a warning and returns
+// the resources of the remaining groups.
+func preferredResources(d discovery.DiscoveryInterface) ([]*metav1.APIResourceList, error) {
+	apiResourceList, err := d.ServerPreferredResources()
+	if err == nil {
+		return apiResourceList, nil
+	}
+
+	failedGroups, partial := discovery.GroupDiscoveryFailedErrorGroups(err)
+	if !partial || len(apiResourceList) == 0 {
+		return nil, fmt.Errorf("failed to get api groups: %w", err)
+	}
+
+	groups := make([]string, 0, len(failedGroups))
+	for gv := range failedGroups {
+		groups = append(groups, gv.String())
+	}
+	slices.Sort(groups)
+
+	log.Warn().Strs("groups", groups).Msg("Some API groups are unavailable, their resources are not included")
+
+	return apiResourceList, nil
 }
 
 type listTarget struct {
@@ -351,9 +378,9 @@ type listTarget struct {
 }
 
 func (k *k8sDB) AllResources(ctx context.Context, full bool, progress ProgressFunc) (map[string]model.ResourceList, error) {
-	apiResourceList, err := k.client.Discovery().ServerPreferredResources()
+	apiResourceList, err := preferredResources(k.client.Discovery())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get api groups: %w", err)
+		return nil, err
 	}
 
 	var targets []listTarget
