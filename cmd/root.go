@@ -90,16 +90,12 @@ func initLogger() {
 
 	zerolog.SetGlobalLevel(logLevel)
 
-	// use color logger when run in terminal
-	if isTerminal() {
-		defaultLogger = zerolog.New(zerolog.NewConsoleWriter())
+	// use color logger when run in terminal; logs never go to stdout, which is reserved for the KBOM
+	if isTerminalWriter(os.Stderr) {
+		defaultLogger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
 
 	log.Logger = defaultLogger.With().Timestamp().Stack().Logger()
-}
-
-func isTerminal() bool {
-	return isTerminalWriter(os.Stdout)
 }
 
 func isTerminalWriter(w io.Writer) bool {

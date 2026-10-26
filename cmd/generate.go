@@ -12,6 +12,8 @@ import (
 
 	"github.com/CycloneDX/cyclonedx-go"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
@@ -179,7 +181,15 @@ func newReporter() *progress.Reporter {
 	}
 
 	// verbose logs are written to stderr too, so do not redraw lines in place
-	return progress.New(progressOut, !verbose && isTerminalWriter(progressOut))
+	interactive := !verbose && isTerminalWriter(progressOut)
+	reporter := progress.New(progressOut, interactive)
+
+	if interactive {
+		// print logs (e.g. warnings) above the spinner instead of into its line
+		log.Logger = log.Logger.Output(zerolog.ConsoleWriter{Out: reporter})
+	}
+
+	return reporter
 }
 
 // runStep runs fn as a progress step and finishes it with summary on success.

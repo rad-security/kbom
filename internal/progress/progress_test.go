@@ -67,3 +67,21 @@ func TestNilWriter(t *testing.T) {
 	s.Update(1, 1, "")
 	s.Done("done")
 }
+
+func TestWriteDuringStep(t *testing.T) {
+	buf := &syncBuffer{}
+	r := New(buf, true)
+
+	s := r.Start("Listing resources")
+	time.Sleep(2 * refreshInterval)
+	_, err := r.Write([]byte("WRN some API groups are unavailable\n"))
+	assert.NoError(t, err)
+	time.Sleep(2 * refreshInterval)
+	s.Done("Found 1 resource types")
+
+	got := buf.String()
+	assert.Contains(t, got, clearLine+"WRN some API groups are unavailable\n")
+
+	logAt := strings.Index(got, "WRN")
+	assert.Contains(t, got[logAt:], "Listing resources", "spinner must be redrawn after the log line")
+}

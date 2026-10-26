@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
@@ -344,6 +345,31 @@ func (k *k8sDB) Metadata(ctx context.Context) (k8sVersion, caDigest string, err 
 	return ver, caDigest, nil
 }
 
+// preferredResources returns the preferred API resources. When only some API groups are
+// unavailable (e.g. a broken metrics-server APIService), it logs a warning and returns
+// the resources of the remaining groups.
+func preferredResources(d discovery.DiscoveryInterface) ([]*metav1.APIResourceList, error) {
+	apiResourceList, err := d.ServerPreferredResources()
+	if err == nil {
+		return apiResourceList, nil
+	}
+
+	failedGroups, partial := discovery.GroupDiscoveryFailedErrorGroups(err)
+	if !partial || len(apiResourceList) == 0 {
+		return nil, fmt.Errorf("failed to get api groups: %w", err)
+	}
+
+	groups := make([]string, 0, len(failedGroups))
+	for gv := range failedGroups {
+		groups = append(groups, gv.String())
+	}
+	slices.Sort(groups)
+
+	log.Warn().Strs("groups", groups).Msg("Some API groups are unavailable, their resources are not included")
+
+	return apiResourceList, nil
+}
+
 type listTarget struct {
 	gvr        schema.GroupVersionResource
 	kind       string
@@ -351,9 +377,9 @@ type listTarget struct {
 }
 
 func (k *k8sDB) AllResources(ctx context.Context, full bool, progress ProgressFunc) (map[string]model.ResourceList, error) {
-	apiResourceList, err := k.client.Discovery().ServerPreferredResources()
+	apiResourceList, err := preferredResources(k.client.Discovery())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get api groups: %w", err)
+		return nil, err
 	}
 
 	var targets []listTarget

@@ -23,6 +23,7 @@ const (
 var spinnerFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
 type Reporter struct {
+	mu          sync.Mutex // serializes writes of steps and logs
 	w           io.Writer
 	interactive bool
 }
@@ -34,6 +35,28 @@ func New(w io.Writer, interactive bool) *Reporter {
 	}
 
 	return &Reporter{w: w, interactive: interactive}
+}
+
+// Write lets other output, such as logs, be printed while a step is running. In
+// interactive mode it clears the spinner line first; the spinner is redrawn on the next tick.
+func (r *Reporter) Write(p []byte) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.interactive {
+		if _, err := io.WriteString(r.w, clearLine); err != nil {
+			return 0, err
+		}
+	}
+
+	return r.w.Write(p)
+}
+
+func (r *Reporter) print(text string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	fmt.Fprint(r.w, text)
 }
 
 // Start begins a new step. Every step must be finished with Done or Fail.
@@ -98,7 +121,7 @@ func (s *Step) finish(mark, summary string) {
 			prefix = clearLine
 		}
 
-		fmt.Fprintf(s.r.w, "%s%s %s (%s)\n", prefix, mark, summary, formatDuration(time.Since(s.started)))
+		s.r.print(fmt.Sprintf("%s%s %s (%s)\n", prefix, mark, summary, formatDuration(time.Since(s.started))))
 	})
 }
 
@@ -109,7 +132,7 @@ func (s *Step) render() {
 	defer ticker.Stop()
 
 	for frame := 0; ; frame++ {
-		fmt.Fprint(s.r.w, clearLine+s.line(spinnerFrames[frame%len(spinnerFrames)]))
+		s.r.print(clearLine + s.line(spinnerFrames[frame%len(spinnerFrames)]))
 
 		select {
 		case <-s.stop:
