@@ -302,6 +302,7 @@ func TestGenerateKBOM(t *testing.T) {
 
 type mockedK8sClient struct {
 	clusterName  func(context.Context) (string, error)
+	clusterID    func(context.Context) (string, error)
 	metadata     func(context.Context) (string, string, error)
 	location     func(context.Context) (*model.Location, error)
 	allImages    func(context.Context) ([]model.Image, error)
@@ -314,6 +315,13 @@ func (m *mockedK8sClient) ClusterName(ctx context.Context) (clusterName string, 
 		return "test-cluster", nil
 	}
 	return m.clusterName(ctx)
+}
+
+func (m *mockedK8sClient) ClusterID(ctx context.Context) (string, error) {
+	if m.clusterID == nil {
+		return "", nil
+	}
+	return m.clusterID(ctx)
 }
 
 func (m *mockedK8sClient) Metadata(ctx context.Context) (ver, ca string, err error) {

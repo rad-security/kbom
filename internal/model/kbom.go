@@ -35,6 +35,7 @@ type Tool struct {
 
 type Cluster struct {
 	Name         string     `json:"name" yaml:"name"`
+	ID           string     `json:"id,omitempty" yaml:"id,omitempty"`
 	CACertDigest string     `json:"ca_cert_digest" yaml:"ca_cert_digest"`
 	K8sVersion   string     `json:"k8s_version" yaml:"k8s_version"`
 	CNIVersion   string     `json:"cni_version,omitempty" yaml:"cni_version,omitempty"`

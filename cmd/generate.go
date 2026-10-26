@@ -34,11 +34,12 @@ const (
 )
 
 var (
-	short   bool
-	quiet   bool
-	output  string
-	format  string
-	outPath string
+	short       bool
+	quiet       bool
+	clusterName string
+	output      string
+	format      string
+	outPath     string
 
 	progressOut io.Writer = os.Stderr
 
@@ -58,6 +59,7 @@ func init() {
 	GenerateCmd.Flags().StringVarP(&format, "format", "f", JSONFormat.Name, fmt.Sprintf("Format (%s)", strings.Join(formatNames(), ", ")))
 	GenerateCmd.Flags().StringVarP(&outPath, "out-path", "p", ".", "Path to write KBOM file to. Works only with --output=file")
 	GenerateCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Quiet - do not print progress to stderr")
+	GenerateCmd.Flags().StringVar(&clusterName, "cluster-name", "", "Cluster name to use instead of the detected one")
 
 	utils.BindFlags(GenerateCmd)
 }
@@ -87,12 +89,12 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 		return err
 	}
 
-	clusterName, err := k8sClient.ClusterName(ctx)
+	name, id, err := clusterIdentity(ctx, k8sClient)
 	if err != nil {
 		step.Fail()
 		return err
 	}
-	step.Done(fmt.Sprintf("Connected to %s (Kubernetes %s)", clusterName, k8sVersion))
+	step.Done(fmt.Sprintf("Connected to %s (Kubernetes %s)", name, k8sVersion))
 
 	full := !short
 	var loc *model.Location
@@ -124,13 +126,7 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 		return k8sClient.AllResources(ctx, full, func(done, total int, resource string) {
 			s.Update(done, total, resource)
 		})
-	}, func(resources map[string]model.ResourceList) string {
-		count := 0
-		for _, r := range resources {
-			count += r.ResourcesCount
-		}
-		return fmt.Sprintf("Found %d resource types (%d objects)", len(resources), count)
-	})
+	}, resourcesSummary)
 	if err != nil {
 		return err
 	}
@@ -149,7 +145,8 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 			CommitTime: config.LastCommitTime,
 		},
 		Cluster: model.Cluster{
-			Name:         clusterName,
+			Name:         name,
+			ID:           id,
 			Location:     loc,
 			CNIVersion:   "", // TODO: get CNI version
 			K8sVersion:   k8sVersion,
@@ -173,6 +170,38 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 	})
 
 	return err
+}
+
+func resourcesSummary(resources map[string]model.ResourceList) string {
+	count := 0
+	for _, r := range resources {
+		count += r.ResourcesCount
+	}
+
+	return fmt.Sprintf("Found %d resource types (%d objects)", len(resources), count)
+}
+
+// clusterIdentity returns the cluster name and ID. The name is taken from --cluster-name,
+// detected from the cluster, or falls back to the ID, so it is never empty for a reachable cluster.
+func clusterIdentity(ctx context.Context, k8sClient kube.K8sClient) (name, id string, err error) {
+	id, err = k8sClient.ClusterID(ctx)
+	if err != nil {
+		return "", "", err
+	}
+
+	name = clusterName
+	if name == "" {
+		name, err = k8sClient.ClusterName(ctx)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	if name == "" {
+		name = id
+	}
+
+	return name, id, nil
 }
 
 func newReporter() *progress.Reporter {
