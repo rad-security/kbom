@@ -25,6 +25,36 @@ const (
 	ContainerType = "container"
 )
 
+func locationProperties(loc *model.Location) []cyclonedx.Property {
+	if loc == nil {
+		return nil
+	}
+
+	var properties []cyclonedx.Property
+	if loc.Name != "" && loc.Name != "unknown" {
+		properties = append(properties, cyclonedx.Property{
+			Name:  RADPrefix + "k8s:cluster:location:name",
+			Value: loc.Name,
+		})
+	}
+
+	if loc.Region != "" {
+		properties = append(properties, cyclonedx.Property{
+			Name:  RADPrefix + "k8s:cluster:location:region",
+			Value: loc.Region,
+		})
+	}
+
+	if loc.Zone != "" {
+		properties = append(properties, cyclonedx.Property{
+			Name:  RADPrefix + "k8s:cluster:location:zone",
+			Value: loc.Zone,
+		})
+	}
+
+	return properties
+}
+
 func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 	cdxBOM := cyclonedx.NewBOM()
 
@@ -60,26 +90,7 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 		},
 	}
 
-	if kbom.Cluster.Location.Name != "" && kbom.Cluster.Location.Name != "unknown" {
-		clusterProperties = append(clusterProperties, cyclonedx.Property{
-			Name:  RADPrefix + "k8s:cluster:location:name",
-			Value: kbom.Cluster.Location.Name,
-		})
-	}
-
-	if kbom.Cluster.Location.Region != "" {
-		clusterProperties = append(clusterProperties, cyclonedx.Property{
-			Name:  RADPrefix + "k8s:cluster:location:region",
-			Value: kbom.Cluster.Location.Region,
-		})
-	}
-
-	if kbom.Cluster.Location.Zone != "" {
-		clusterProperties = append(clusterProperties, cyclonedx.Property{
-			Name:  RADPrefix + "k8s:cluster:location:zone",
-			Value: kbom.Cluster.Location.Zone,
-		})
-	}
+	clusterProperties = append(clusterProperties, locationProperties(kbom.Cluster.Location)...)
 
 	clusterComponent := cyclonedx.Component{
 		BOMRef:     kbom.Cluster.BOMRef(),

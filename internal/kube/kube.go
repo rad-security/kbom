@@ -146,8 +146,9 @@ func (k *k8sDB) Location(ctx context.Context) (*model.Location, error) {
 		return nil, fmt.Errorf("failed to list nodes: %v", err)
 	}
 
+	// clusters can have no nodes (e.g. scaled to zero), location is unknown then
 	if len(node.Items) == 0 {
-		return nil, fmt.Errorf("no node found")
+		return nil, nil
 	}
 
 	// get location from node labels
@@ -330,14 +331,14 @@ func (k *k8sDB) Metadata(ctx context.Context) (k8sVersion, caDigest string, err 
 
 	version, err := k.client.Discovery().ServerVersion()
 	if err != nil {
-		return caDigest, "", fmt.Errorf("error getting k8s version: %w", err)
+		return "", caDigest, fmt.Errorf("error getting k8s version: %w", err)
 	}
 
 	ver := strings.Trim(version.GitVersion, "v")
 
 	sVer, err := semver.NewVersion(ver)
 	if err != nil {
-		return caDigest, "", fmt.Errorf("error parsing k8s version: %w", err)
+		return "", caDigest, fmt.Errorf("error parsing k8s version: %w", err)
 	}
 
 	ver = fmt.Sprintf("%d.%d.%d", sVer.Major(), sVer.Minor(), sVer.Patch())
