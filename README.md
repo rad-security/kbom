@@ -39,12 +39,13 @@ Optional flags include:
 
 ```plain
 Flags:
-  -f, --format string     Format (json, yaml, cyclonedx-json, cyclonedx-xml) (default "json")
-  -h, --help              help for generate
-  -p, --out-path string   Path to write KBOM file to. Works only with --output=file (default ".")
-  -o, --output string     Output (stdout, file) (default "stdout")
-  -q, --quiet             Quiet - do not print progress to stderr
-      --short             Short - only include metadata, nodes, images and resources counters
+      --cluster-name string   Cluster name to use instead of the detected one
+  -f, --format string         Format (json, yaml, cyclonedx-json, cyclonedx-xml) (default "json")
+  -h, --help                  help for generate
+  -p, --out-path string       Path to write KBOM file to. Works only with --output=file (default ".")
+  -o, --output string         Output (stdout, file) (default "stdout")
+  -q, --quiet                 Quiet - do not print progress to stderr
+      --short                 Short - only include metadata, nodes, images and resources counters
 ```
 
 Progress is printed to stderr, so it does not interfere with the KBOM written to stdout.

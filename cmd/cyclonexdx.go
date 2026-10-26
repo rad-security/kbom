@@ -90,6 +90,13 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 		},
 	}
 
+	if kbom.Cluster.ID != "" {
+		clusterProperties = append(clusterProperties, cyclonedx.Property{
+			Name:  RADPrefix + "k8s:cluster:id",
+			Value: kbom.Cluster.ID,
+		})
+	}
+
 	clusterProperties = append(clusterProperties, locationProperties(kbom.Cluster.Location)...)
 
 	clusterComponent := cyclonedx.Component{

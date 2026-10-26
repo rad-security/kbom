@@ -63,6 +63,9 @@ var expectedSchema = `{
         "name": {
           "type": "string"
         },
+        "id": {
+          "type": "string"
+        },
         "ca_cert_digest": {
           "type": "string"
         },

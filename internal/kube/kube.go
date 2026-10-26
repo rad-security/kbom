@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -58,11 +59,21 @@ var metadataOnlyGroups = map[string]bool{
 	"storage.k8s.io":               true,
 }
 
+var (
+	// cluster names as written to kubeconfig by cloud provider CLIs
+	eksARNClusterRe = regexp.MustCompile(`^arn:aws[a-z-]*:eks:[^:]+:\d+:cluster/(.+)$`)
+	gkeClusterRe    = regexp.MustCompile(`^gke_[^_]+_[^_]+_(.+)$`)
+	eksctlClusterRe = regexp.MustCompile(`^(.+)\.[a-z0-9-]+\.eksctl\.io$`)
+)
+
+const eksctlClusterNameLabel = "alpha.eksctl.io/cluster-name"
+
 // ProgressFunc is called after each resource type is listed.
 type ProgressFunc func(done, total int, resource string)
 
 type K8sClient interface {
 	ClusterName(ctx context.Context) (string, error)
+	ClusterID(ctx context.Context) (string, error)
 	Metadata(ctx context.Context) (string, string, error)
 	Location(ctx context.Context) (*model.Location, error)
 	AllImages(ctx context.Context) ([]model.Image, error)
@@ -72,6 +83,7 @@ type K8sClient interface {
 
 func NewClient(k8sContext string) (K8sClient, error) {
 	currentK8sContext := k8sContext
+	kubeconfigCluster := ""
 
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
@@ -89,6 +101,10 @@ func NewClient(k8sContext string) (K8sClient, error) {
 
 		if k8sContext == "" {
 			currentK8sContext = rawConfig.CurrentContext
+		}
+
+		if kubeContext, ok := rawConfig.Contexts[currentK8sContext]; ok {
+			kubeconfigCluster = kubeContext.Cluster
 		}
 
 		cfg, err = clientConfig.ClientConfig()
@@ -118,25 +134,68 @@ func NewClient(k8sContext string) (K8sClient, error) {
 	rest.SetDefaultWarningHandler(rest.NoWarnings{})
 
 	return &k8sDB{
-		k8sContext:     currentK8sContext,
-		cfg:            cfg,
-		client:         clientset,
-		dynamicClient:  dynamicClient,
-		metadataClient: metadataClient,
+		k8sContext:        currentK8sContext,
+		kubeconfigCluster: kubeconfigCluster,
+		cfg:               cfg,
+		client:            clientset,
+		dynamicClient:     dynamicClient,
+		metadataClient:    metadataClient,
 	}, nil
 }
 
 type k8sDB struct {
-	k8sContext     string
-	cfg            *rest.Config
-	client         kubernetes.Interface
-	dynamicClient  dynamic.Interface
-	metadataClient metadata.Interface
+	k8sContext        string
+	kubeconfigCluster string // cluster entry of the kubeconfig context, empty in-cluster
+	cfg               *rest.Config
+	client            kubernetes.Interface
+	dynamicClient     dynamic.Interface
+	metadataClient    metadata.Interface
 }
 
+// ClusterName returns the cluster name from the kubeconfig cluster entry when it uses a known
+// cloud provider format, otherwise the context name. In-cluster, where there is no kubeconfig,
+// it falls back to node labels and returns an empty string when the name is unknown.
 func (k *k8sDB) ClusterName(ctx context.Context) (string, error) {
-	// TODO: find a better way to get cluster name, but for now use cluster context name
-	return k.k8sContext, nil
+	if name := clusterNameFromKubeconfig(k.kubeconfigCluster); name != "" {
+		return name, nil
+	}
+
+	if k.k8sContext != "" {
+		return k.k8sContext, nil
+	}
+
+	nodes, err := k.client.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: 1})
+	if err != nil {
+		return "", fmt.Errorf("failed to list nodes: %w", err)
+	}
+
+	if len(nodes.Items) > 0 {
+		return nodes.Items[0].Labels[eksctlClusterNameLabel], nil
+	}
+
+	return "", nil
+}
+
+func clusterNameFromKubeconfig(cluster string) string {
+	for _, re := range []*regexp.Regexp{eksARNClusterRe, gkeClusterRe, eksctlClusterRe} {
+		if m := re.FindStringSubmatch(cluster); m != nil {
+			return m[1]
+		}
+	}
+
+	return ""
+}
+
+// ClusterID returns the UID of the kube-system namespace, which is stable for the lifetime
+// of the cluster. It returns an empty string when the namespace can't be read.
+func (k *k8sDB) ClusterID(ctx context.Context) (string, error) {
+	ns, err := k.client.CoreV1().Namespaces().Get(ctx, metav1.NamespaceSystem, metav1.GetOptions{})
+	if err != nil {
+		log.Debug().Err(err).Msg("Failed to get kube-system namespace, cluster ID is unknown")
+		return "", nil
+	}
+
+	return string(ns.UID), nil
 }
 
 func (k *k8sDB) Location(ctx context.Context) (*model.Location, error) {
