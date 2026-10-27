@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # Kubernetes modules must move together
+      kubernetes:
+        patterns:
+          - "k8s.io/*"
+          - "sigs.k8s.io/*"
+      go-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    ignore:
+      # cosign v3 (installer v4+) changes the release signature format
+      - dependency-name: sigstore/cosign-installer
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directory: /build/package
+    schedule:
+      interval: weekly
