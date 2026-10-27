@@ -67,8 +67,8 @@ for mode in full short; do
   fi
 
   step "validate $mode cyclonedx against CycloneDX schema"
-  "$CYCLONEDX" validate --input-file "$OUT/$mode.cyclonedx-json" --input-format json --fail-on-errors
-  "$CYCLONEDX" validate --input-file "$OUT/$mode.cyclonedx-xml" --input-format xml --fail-on-errors
+  "$CYCLONEDX" validate --input-file "$OUT/$mode.cyclonedx-json" --input-format json --input-version v1_7 --fail-on-errors
+  "$CYCLONEDX" validate --input-file "$OUT/$mode.cyclonedx-xml" --input-format xml --input-version v1_7 --fail-on-errors
 done
 
 # Regression test for #129: KUBECONFIG with multiple files
