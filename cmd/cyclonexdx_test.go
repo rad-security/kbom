@@ -57,17 +57,27 @@ func TestTransformToCycloneDXAddons(t *testing.T) {
 		K8sVersion: "1.35.8",
 		Components: model.Components{
 			Images: []model.Image{img},
-			Addons: []model.Addon{{Name: "coredns", Category: "dns", Version: "v1.12.0", Images: []string{img.FullName}}},
+			Addons: []model.Addon{{
+				Name:     "coredns",
+				Category: "dns",
+				Version:  "v1.12.0",
+				CPE:      "cpe:2.3:a:coredns.io:coredns:1.12.0:*:*:*:*:*:*:*",
+				Images:   []string{img.FullName},
+			}},
 		},
 	}}
 
 	bom := transformToCycloneDXBOM(kbom)
+
+	assert.Equal(t, "cpe:2.3:a:kubernetes:kubernetes:1.35.8:*:*:*:*:*:*:*", bom.Metadata.Component.CPE)
+	assert.Equal(t, "pkg:golang/k8s.io/kubernetes@v1.35.8", bom.Metadata.Component.PackageURL)
 
 	var addonRef string
 	for _, c := range *bom.Components {
 		if c.Name == "coredns" {
 			addonRef = c.BOMRef
 			assert.Equal(t, "v1.12.0", c.Version)
+			assert.Equal(t, "cpe:2.3:a:coredns.io:coredns:1.12.0:*:*:*:*:*:*:*", c.CPE)
 			assert.Contains(t, *c.Properties, cyclonedx.Property{Name: "rad:kbom:k8s:addon:category", Value: "dns"})
 		}
 	}

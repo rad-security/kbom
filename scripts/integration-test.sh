@@ -73,6 +73,8 @@ for mode in full short; do
   step "validate $mode cyclonedx against CycloneDX schema"
   "$CYCLONEDX" validate --input-file "$OUT/$mode.cyclonedx-json" --input-format json --input-version v1_7 --fail-on-errors
   "$CYCLONEDX" validate --input-file "$OUT/$mode.cyclonedx-xml" --input-format xml --input-version v1_7 --fail-on-errors
+  check "$OUT/$mode.cyclonedx-json" '.metadata.component.cpe | startswith("cpe:2.3:a:kubernetes:kubernetes:")' "kubernetes CPE is missing"
+  check "$OUT/$mode.cyclonedx-json" '.metadata.component.purl | startswith("pkg:golang/k8s.io/kubernetes@v")' "kubernetes purl is missing"
 done
 
 # Regression test for #129: KUBECONFIG with multiple files

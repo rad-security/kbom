@@ -49,6 +49,19 @@ func (c *Cluster) BOMRef() string {
 	return fmt.Sprintf("%s:%s/%s@%s", pkgPrefix, k8sPrefix, url.QueryEscape(kubernetesPkgName), c.K8sVersion)
 }
 
+// PackageURL returns the Go module purl of Kubernetes, which vulnerability scanners match against
+// Kubernetes advisories, e.g. pkg:golang/k8s.io/kubernetes@v1.35.8. Distribution suffixes of the
+// version (1.35.8-eks-1234) are dropped.
+func (c *Cluster) PackageURL() string {
+	version, _, _ := strings.Cut(c.K8sVersion, "-")
+	version, _, _ = strings.Cut(version, "+")
+	if version == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s:golang/%s@v%s", pkgPrefix, kubernetesPkgName, strings.TrimPrefix(version, "v"))
+}
+
 func (c *Cluster) BOMName() string {
 	return kubernetesPkgName
 }
@@ -64,6 +77,7 @@ type Addon struct {
 	Name     string   `json:"name" yaml:"name"`
 	Category string   `json:"category" yaml:"category"`
 	Version  string   `json:"version" yaml:"version"`
+	CPE      string   `json:"cpe,omitempty" yaml:"cpe,omitempty"`
 	Images   []string `json:"images" yaml:"images"`
 }
 
