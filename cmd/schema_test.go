@@ -266,8 +266,6 @@ var expectedSchema = `{
         "hostname",
         "capacity",
         "allocatable",
-        "labels",
-        "annotations",
         "machine_id",
         "architecture",
         "container_runtime_version",
