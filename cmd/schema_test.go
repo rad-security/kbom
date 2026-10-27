@@ -45,6 +45,9 @@ var expectedSchema = `{
         "version": {
           "type": "string"
         },
+        "cpe": {
+          "type": "string"
+        },
         "images": {
           "items": {
             "type": "string"

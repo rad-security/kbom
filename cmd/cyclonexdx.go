@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mitchellh/hashstructure/v2"
 
+	"github.com/rad-security/kbom/internal/addons"
 	"github.com/rad-security/kbom/internal/model"
 )
 
@@ -104,6 +105,8 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 		Type:       cyclonedx.ComponentTypePlatform,
 		Name:       kbom.Cluster.BOMName(),
 		Version:    kbom.Cluster.K8sVersion,
+		CPE:        addons.CPE(addons.KubernetesCPEProduct, kbom.Cluster.K8sVersion),
+		PackageURL: kbom.Cluster.PackageURL(),
 		Properties: &clusterProperties,
 	}
 	cdxBOM.Metadata.Component = &clusterComponent
@@ -258,6 +261,7 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 			Type:    cyclonedx.ComponentTypeApplication,
 			Name:    addon.Name,
 			Version: addon.Version,
+			CPE:     addon.CPE,
 			Properties: &[]cyclonedx.Property{
 				{
 					Name:  RADPrefix + "k8s:addon:category",

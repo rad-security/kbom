@@ -91,7 +91,12 @@ func Detect(images []model.Image) []model.Addon {
 
 		key := [2]string{a.name, img.Version}
 		if found[key] == nil {
-			found[key] = &model.Addon{Name: a.name, Category: a.category, Version: img.Version}
+			found[key] = &model.Addon{
+				Name:     a.name,
+				Category: a.category,
+				Version:  img.Version,
+				CPE:      CPE(cpeProducts[a.name], img.Version),
+			}
 		}
 		found[key].Images = append(found[key].Images, img.FullName)
 	}

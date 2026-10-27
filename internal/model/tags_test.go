@@ -40,3 +40,18 @@ func TestYAMLTagsMatchJSON(t *testing.T) {
 		t.Fatalf("expected to check all model types, checked only %d", len(seen))
 	}
 }
+
+func TestClusterPackageURL(t *testing.T) {
+	for version, expected := range map[string]string{
+		"1.35.8":           "pkg:golang/k8s.io/kubernetes@v1.35.8",
+		"v1.35.8":          "pkg:golang/k8s.io/kubernetes@v1.35.8",
+		"1.35.8-eks-3025e": "pkg:golang/k8s.io/kubernetes@v1.35.8",
+		"1.35.8+k3s1":      "pkg:golang/k8s.io/kubernetes@v1.35.8",
+		"":                 "",
+	} {
+		c := Cluster{K8sVersion: version}
+		if got := c.PackageURL(); got != expected {
+			t.Errorf("PackageURL(%q) = %q, want %q", version, got, expected)
+		}
+	}
+}
