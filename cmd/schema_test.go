@@ -34,6 +34,33 @@ var expectedSchema = `{
   "$id": "https://github.com/rad-security/kbom/internal/model/kbom",
   "$ref": "#/$defs/KBOM",
   "$defs": {
+    "Addon": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "images": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "category",
+        "version",
+        "images"
+      ]
+    },
     "Capacity": {
       "properties": {
         "cpu": {
@@ -108,6 +135,12 @@ var expectedSchema = `{
         "images": {
           "items": {
             "$ref": "#/$defs/Image"
+          },
+          "type": "array"
+        },
+        "addons": {
+          "items": {
+            "$ref": "#/$defs/Addon"
           },
           "type": "array"
         },

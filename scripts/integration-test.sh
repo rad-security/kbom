@@ -9,6 +9,7 @@
 #   KUBE_CONTEXT  Kubernetes context (default: current context)
 #   CYCLONEDX     cyclonedx-cli binary (default: cyclonedx)
 #   EXPECT_KIND   optional resource kind that must be present in the KBOM
+#   EXPECT_ADDONS optional space-separated add-on names that must be detected
 set -euo pipefail
 
 KBOM=${KBOM:-./kbom}
@@ -62,6 +63,9 @@ for mode in full short; do
   else
     check "$json" '[.cluster.components.resources[] | .resources == null] | all' "short output contains resource items"
   fi
+  for addon in ${EXPECT_ADDONS:-}; do
+    check "$json" "[.cluster.components.addons[]? | select(.name == \"$addon\" and .version != \"\")] | length > 0" "add-on $addon is missing"
+  done
   if [[ -n ${EXPECT_KIND:-} ]]; then
     check "$json" "[.cluster.components.resources[] | select(.kind == \"$EXPECT_KIND\")] | length > 0" "kind $EXPECT_KIND is missing"
   fi

@@ -206,6 +206,7 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 		clusterDependencies[bomRef] = bomRef
 	}
 
+	imageRefs := make(map[string]string, len(kbom.Cluster.Components.Images))
 	for _, img := range kbom.Cluster.Components.Images {
 		bomRef := img.PkgID()
 		container := cyclonedx.Component{
@@ -243,9 +244,40 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 		}
 
 		components = append(components, container)
+		imageRefs[img.FullName] = bomRef
 
 		if img.ControlPlane {
 			clusterDependencies[bomRef] = bomRef
+		}
+	}
+
+	for _, addon := range kbom.Cluster.Components.Addons {
+		bomRef := id(addon)
+		components = append(components, cyclonedx.Component{
+			BOMRef:  bomRef,
+			Type:    cyclonedx.ComponentTypeApplication,
+			Name:    addon.Name,
+			Version: addon.Version,
+			Properties: &[]cyclonedx.Property{
+				{
+					Name:  RADPrefix + "k8s:addon:category",
+					Value: addon.Category,
+				},
+			},
+		})
+		clusterDependencies[bomRef] = bomRef
+
+		addonImages := make([]string, 0, len(addon.Images))
+		for _, img := range addon.Images {
+			if ref, ok := imageRefs[img]; ok {
+				addonImages = append(addonImages, ref)
+			}
+		}
+		if len(addonImages) > 0 {
+			dependencies = append(dependencies, cyclonedx.Dependency{
+				Ref:          bomRef,
+				Dependencies: &addonImages,
+			})
 		}
 	}
 

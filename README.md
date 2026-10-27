@@ -50,6 +50,10 @@ Flags:
 
 Progress is printed to stderr, so it does not interfere with the KBOM written to stdout.
 
+### Add-ons
+
+*kbom* detects well-known cluster add-ons and their versions from the images running in the cluster, e.g. the CNI plugin (AWS VPC CNI, Cilium, Calico, ...), CoreDNS, kube-proxy, CSI drivers, ingress controllers, service meshes, cert-manager, Karpenter and Flux or Argo CD. They are listed in `cluster.components.addons` (and as components in CycloneDX output), and the CNI version is reported as `cluster.cni_version`. The full list is in [internal/addons/addons.go](internal/addons/addons.go).
+
 ## Schema
 
 The high level object model can be found [here](docs/schema.md).

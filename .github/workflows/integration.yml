@@ -47,3 +47,4 @@ jobs:
         run: scripts/integration-test.sh
         env:
           EXPECT_KIND: Widget
+          EXPECT_ADDONS: kindnet coredns kube-proxy local-path-provisioner

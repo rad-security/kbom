@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	"github.com/rad-security/kbom/internal/addons"
 	"github.com/rad-security/kbom/internal/config"
 	"github.com/rad-security/kbom/internal/kube"
 	"github.com/rad-security/kbom/internal/model"
@@ -131,6 +132,8 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 		return err
 	}
 
+	detectedAddons := addons.Detect(allImages)
+
 	kbom := model.KBOM{
 		ID:          kbomID,
 		BOMFormat:   BOMFormat,
@@ -148,13 +151,14 @@ func generateKBOM(k8sClient kube.K8sClient) error {
 			Name:         name,
 			ID:           id,
 			Location:     loc,
-			CNIVersion:   "", // TODO: get CNI version
+			CNIVersion:   addons.CNIVersion(detectedAddons),
 			K8sVersion:   k8sVersion,
 			CACertDigest: caCertDigest,
 			NodesCount:   len(nodes),
 			Nodes:        nodes,
 			Components: model.Components{
 				Images:    allImages,
+				Addons:    detectedAddons,
 				Resources: resources,
 			},
 		},
