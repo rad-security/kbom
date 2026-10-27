@@ -280,8 +280,17 @@ func transformToCycloneDXBOM(kbom *model.KBOM) *cyclonedx.BOM { //nolint:funlen
 				})
 			}
 
+			// resource items don't carry kind and API version, include them so
+			// objects with the same name in different kinds get unique refs
+			ref := id(model.Resource{
+				Kind:       resList.Kind,
+				APIVersion: resList.APIVersion,
+				Name:       res.Name,
+				Namespace:  res.Namespace,
+			})
+
 			resource := cyclonedx.Component{
-				BOMRef:     id(res),
+				BOMRef:     ref,
 				Type:       cyclonedx.ComponentTypeApplication, // TODO: this is not perfect but we don't have a better option
 				Name:       res.Name,
 				Version:    res.APIVersion,
