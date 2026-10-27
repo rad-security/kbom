@@ -58,6 +58,10 @@ test: ## Runs unit tests
 	go test -coverprofile coverage.out -v --race ./...
 	go tool cover -html=coverage.out -o coverage_report.html
 
+.PHONY: integration-test
+integration-test: build ## Runs integration tests against the current cluster
+	scripts/integration-test.sh
+
 .PHONY: help
 help: ## Displays this help screen
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n\nTargets:\n"} /^[a-zA-Z_-]+:.*?##/ \

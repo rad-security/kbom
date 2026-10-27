@@ -1,0 +1,49 @@
+name: integration
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    env:
+      CYCLONEDX_CLI_VERSION: v0.33.1
+      CYCLONEDX_CLI_SHA256: bfc8b2538da86fe239bc53658bbb63c1c8c510a293c1e6891aa5bea5d3c58746
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27'
+          check-latest: true # https://github.com/actions/setup-go#check-latest-version
+          cache: true # https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs
+
+      - name: Build
+        run: go build -o kbom .
+
+      - name: Install cyclonedx-cli
+        run: |
+          curl -sSfL -o cyclonedx "https://github.com/CycloneDX/cyclonedx-cli/releases/download/${CYCLONEDX_CLI_VERSION}/cyclonedx-linux-x64"
+          echo "${CYCLONEDX_CLI_SHA256}  cyclonedx" | sha256sum -c
+          chmod +x cyclonedx
+          sudo mv cyclonedx /usr/local/bin/
+
+      - name: Create kind cluster
+        uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+        with:
+          cluster_name: kbom
+
+      - name: Apply fixtures
+        run: |
+          kubectl apply -f test/integration/fixtures.yaml
+          kubectl wait --for=condition=Established crd/widgets.kbom.rad.security --timeout=60s
+          kubectl apply -f test/integration/widget.yaml
+          kubectl -n kbom-fixtures rollout status deployment/web --timeout=120s
+
+      - name: Integration test
+        run: scripts/integration-test.sh
+        env:
+          EXPECT_KIND: Widget

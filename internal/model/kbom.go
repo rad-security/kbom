@@ -86,8 +86,8 @@ type Node struct {
 	Hostname                string            `json:"hostname" yaml:"hostname"`
 	Capacity                *Capacity         `json:"capacity" yaml:"capacity"`
 	Allocatable             *Capacity         `json:"allocatable" yaml:"allocatable"`
-	Labels                  map[string]string `json:"labels" yaml:"labels"`
-	Annotations             map[string]string `json:"annotations" yaml:"annotations"`
+	Labels                  map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	Annotations             map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 	MachineID               string            `json:"machine_id" yaml:"machine_id"`
 	Architecture            string            `json:"architecture" yaml:"architecture"`
 	ContainerRuntimeVersion string            `json:"container_runtime_version" yaml:"container_runtime_version"`
