@@ -1,0 +1,7 @@
+apiVersion: kbom.rad.security/v1
+kind: Widget
+metadata:
+  name: example
+  namespace: kbom-fixtures
+spec:
+  size: 1
