@@ -26,6 +26,13 @@ Images:
 - Version
 - Digest
 
+Add-ons:
+
+- Name
+- Category
+- Version
+- Images
+
 KubeObjects:
 
 - Kind

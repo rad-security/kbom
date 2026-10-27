@@ -55,7 +55,16 @@ func (c *Cluster) BOMName() string {
 
 type Components struct {
 	Images    []Image                 `json:"images,omitempty" yaml:"images,omitempty"`
+	Addons    []Addon                 `json:"addons,omitempty" yaml:"addons,omitempty"`
 	Resources map[string]ResourceList `json:"resources" yaml:"resources"`
+}
+
+// Addon is a well-known cluster add-on detected from the images running in the cluster.
+type Addon struct {
+	Name     string   `json:"name" yaml:"name"`
+	Category string   `json:"category" yaml:"category"`
+	Version  string   `json:"version" yaml:"version"`
+	Images   []string `json:"images" yaml:"images"`
 }
 
 type Resource struct {
